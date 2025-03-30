@@ -1,10 +1,15 @@
-﻿namespace WebChatApplication.DataAccess.Entities;
+﻿using WebChatApplication.Enums;
+
+namespace WebChatApplication.DataAccess.Entities;
 
 public class ChatEntity
 {
     public Guid Id { get; set; }
+    public Guid OwnerId { get; set; }
     public string Name { get; set; } = null!;
-    public DateTime CreatedDate { get; set; }
+    public ChatTypes ChatType { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public virtual UserEntity Owner { get; set; } = null!;
     public virtual ICollection<UserEntity> Users { get; set; } = new List<UserEntity>();
     public virtual ICollection<MessageEntity> Messages { get; set; } = new List<MessageEntity>();
 }

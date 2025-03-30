@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WebChatApplication.DataAccess.Entities;
+using WebChatApplication.Enums;
 
 namespace WebChatApplication.DataAccess.Configuration;
 
@@ -8,9 +9,9 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
 {
     public void Configure(EntityTypeBuilder<UserEntity> builder)
     {
-        builder.HasKey(e => e.Id).HasName("Users_pkey");
+        builder.HasKey(e => e.Id).HasName("users_pkey");
 
-        builder.ToTable("Users");
+        builder.ToTable("users");
 
         builder.Property(e => e.Id)
             .ValueGeneratedNever()
@@ -21,22 +22,21 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
         builder.Property(e => e.Username)
             .HasMaxLength(75)
             .HasColumnName("username");
-        builder.Property(e => e.CreatedDate)
-            .HasColumnName("created_date");
+        builder.Property(e => e.CreatedAt)
+            .HasColumnName("created_at");
         builder.Property(e => e.Email)
             .HasMaxLength(100)
             .HasColumnName("email");
-        builder.Property(e => e.IsDeleted)
-            .HasDefaultValue(false)
-            .HasColumnName("is_deleted");
-        builder.Property(e => e.IsBanned)
-            .HasDefaultValue(false)
-            .HasColumnName("is_banned");
+        builder.Property(e => e.Status)
+            .HasDefaultValue(UserStatuses.EmailNotVerified)
+            .HasColumnName("status");
         builder.Property(e => e.LastActivity)
-            .HasColumnName("last_activity");
+            .HasColumnName("last_activity")
+            .IsRequired(false);
 
         builder.Property(e => e.PasswordHash)
-            .HasColumnName("password_hash");
+            .HasColumnName("password_hash")
+            .HasMaxLength(100);
 
         builder.HasOne(e => e.Role)
             .WithMany()
@@ -51,6 +51,20 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
 
         builder.HasMany(e => e.Chats)
             .WithMany(e => e.Users)
-            .UsingEntity(joinEntity => joinEntity.ToTable("UsersChats"));
+            .UsingEntity(joinEntity =>
+            {
+                joinEntity.Property("UsersId").HasColumnName("user_id");
+                joinEntity.Property("ChatsId").HasColumnName("chat_id");
+                joinEntity.ToTable("users_chats");
+            });
+
+        builder.HasMany(e => e.Actions)
+            .WithOne(e => e.User)
+            .HasForeignKey(e => e.UserId);
+
+        builder.HasIndex(u => u.Username)
+            .IsUnique();
+        builder.HasIndex(u => u.Email)
+            .IsUnique();
     }
 }

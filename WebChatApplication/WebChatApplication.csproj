@@ -7,34 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <_ContentIncludedByDefault Remove="Views\CreationsPlatform\CreateCreation.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\CreationsPlatform\Details.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\CreationsPlatform\EditCreation.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\CreationsPlatform\Index.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\CreationsPlatform\MyCreations.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\CreationsPlatform\Top50.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\Account\AccessDenied.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\Account\Login.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\Account\Manage\DeleteAccount.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\Account\Manage\Email.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\Account\Manage\Password.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\Account\Manage\Profile.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\Account\Manage\_ManageNav.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\Account\Register.cshtml" />
-      <_ContentIncludedByDefault Remove="Views\Account\_StatusMessage.cshtml" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="AutoMapper" Version="13.0.1" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="DataAccess\Migrations\" />
     </ItemGroup>
 
 </Project>
