@@ -11,11 +11,11 @@ public class ApplicationDbContext : DbContext
     }
 
     public virtual DbSet<UserEntity> Users { get; set; }
-    public virtual DbSet<FriendEntity> Friends { get; set; }
-    public virtual DbSet<BlacklistedUserEntity> BlacklistedUsers { get; set; }
+    public virtual DbSet<UserRelationEntity> UserRelations { get; set; }
     public virtual DbSet<RoleEntity> Roles { get; set; }
     public virtual DbSet<ChatEntity> Chats { get; set; }
     public virtual DbSet<MessageEntity> Messages { get; set; }
+    public virtual DbSet<AttachmentEntity> Attachments { get; set; }
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
