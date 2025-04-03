@@ -10,7 +10,7 @@ public class ApplicationDbContext : DbContext
     {
     }
 
-    public virtual DbSet<UserEntity> Users { get; set; }
+    public virtual DbSet<UserEntity?> Users { get; set; }
     public virtual DbSet<UserRelationEntity> UserRelations { get; set; }
     public virtual DbSet<RoleEntity> Roles { get; set; }
     public virtual DbSet<ChatEntity> Chats { get; set; }

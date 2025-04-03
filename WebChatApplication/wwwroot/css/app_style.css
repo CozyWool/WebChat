@@ -1,0 +1,14 @@
+﻿.fa-eye {
+    position: absolute;
+    top: 35%;
+    right: 4%;
+    cursor: pointer;
+    color: gray;
+}
+.fa-eye-slash {
+    position: absolute;
+    top: 35%;
+    right: 4%;
+    cursor: pointer;
+    color: gray;
+}
