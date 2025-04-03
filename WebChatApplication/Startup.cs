@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using WebChatApplication.DataAccess.Contexts;
+using WebChatApplication.DataAccess.Repositories;
+using WebChatApplication.Extensions;
+using WebChatApplication.Services;
 
 namespace WebChatApplication;
 
@@ -17,15 +20,21 @@ public class Startup(IConfiguration configuration)
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
         });
 
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserService, UserService>();
+
+        services.AddFluentEmail(configuration);
+        services.AddScoped<IEmailService, EmailService>();
+
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
-                options.LoginPath = new PathString(CookieAuthenticationDefaults.LoginPath);
-                options.LogoutPath = new PathString(CookieAuthenticationDefaults.LogoutPath);
-                options.AccessDeniedPath = new PathString(CookieAuthenticationDefaults.AccessDeniedPath);
+                options.LoginPath = new PathString("/account/login");
+                options.LogoutPath = new PathString("/account/logout");
+                options.AccessDeniedPath = new PathString("/account/access-denied");
                 options.Cookie.HttpOnly = true;
             });
-       
+
         services.AddMvc();
     }
 

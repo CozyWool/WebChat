@@ -1,0 +1,51 @@
+﻿@model WebChatApplication.Models.User.RegisterModel
+
+<h2 class="text-center">Регистрация</h2>
+
+<div class="row form-register w-100 m-auto">
+    <div class="col-md-12">
+        <form asp-action="Register" asp-controller="Account" asp-anti-forgery="true">
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]"/>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div>
+                <div class="form-floating mb-2">
+                    <input type="email" autocomplete="email" class="form-control" asp-for="Email">
+                    <label asp-for="Email">@Html.DisplayNameFor(m => m.Email)</label>
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-2">
+                    <input class="form-control" asp-for="Username">
+                    <label asp-for="Username">@Html.DisplayNameFor(m => m.Username)</label>
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-2">
+                    <input type="password" asp-for="Password" autocomplete="password" class="form-control" id="password-field"/>
+                    <label asp-for="Password">@Html.DisplayNameFor(m => m.Password)</label>
+                    <i class="fa-solid fa-eye" id="show-password"></i>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <div class="form-floating mb-2">
+                    <input type="password" asp-for="ConfirmPassword" class="form-control" id="confirm-password-field"/>
+                    <label asp-for="ConfirmPassword">@Html.DisplayNameFor(m => m.ConfirmPassword)</label>
+                    <i class="fa-solid fa-eye" id="show-confirm-password"></i>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+                <div class="mb-2">
+                    <button type="submit" class="btn btn-primary w-100 py-2">Регистрация</button>
+                    <a asp-action="Login" asp-controller="Account" class="btn btn-secondary w-100 py-2 mt-2">Уже зарегистрированы? Войти</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-register{
+        max-width: 330px;
+    }
+</style>
+
+<script src="~/js/showPassword.js"></script>
+<script>showPassword("#show-password", "#password-field");</script>
+<script>showPassword("#show-confirm-password", "#confirm-password-field");</script>

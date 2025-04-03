@@ -1,0 +1,32 @@
+@using WebChatApplication.Controllers
+@{
+    Layout = "_Layout";
+}
+<div class="container">
+    <h3>Личный кабинет</h3>
+    <div>
+        <hr/>
+        <div class="row">
+            <div class="col-md-3">
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewData["ActivePage"] == nameof(AccountController.Profile) ? "active" : "") " asp-controller="Account" asp-action="Profile">Профиль</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewData["ActivePage"] == nameof(AccountController.ChangeEmail) ? "active" : "")" asp-controller="Account" asp-action="ChangeEmail">Электронная почта</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewData["ActivePage"] == nameof(AccountController.ChangePassword) ? "active" : "")" asp-controller="Account" asp-action="ChangePassword">Пароль</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewData["ActivePage"] == nameof(AccountController.DeleteAccount) ? "text-bg-danger" : "text-danger")" asp-controller="Account" asp-action="DeleteAccount">Удаление аккаунта</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-9">
+                <h4>@ViewData["Title"]</h4>
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+</div>

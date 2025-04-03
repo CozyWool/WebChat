@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WebChatApplication.DataAccess.Entities;
 using WebChatApplication.Enums;
+using WebChatApplication.Helpers;
 
 namespace WebChatApplication.DataAccess.Configuration;
 
@@ -27,8 +28,14 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
         builder.Property(e => e.Email)
             .HasMaxLength(100)
             .HasColumnName("email");
+        builder.Property(e => e.EmailConfirmationToken)
+            .HasMaxLength(100)
+            .HasColumnName("email_confirmation_token");
+        builder.Property(e => e. PasswordRecoveryToken)
+            .HasMaxLength(100)
+            .HasColumnName("password_recovery_token");
         builder.Property(e => e.Status)
-            .HasDefaultValue(UserStatuses.EmailNotVerified)
+            .HasDefaultValue(UserStatuses.EmailNotConfirmed)
             .HasColumnName("status");
         builder.Property(e => e.LastActivity)
             .HasColumnName("last_activity")
@@ -66,5 +73,20 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
             .IsUnique();
         builder.HasIndex(u => u.Email)
             .IsUnique();
+
+        var id = Guid.NewGuid();
+        builder.HasData(
+            new UserEntity
+            {
+                Id = id,
+                RoleId = 3,
+                Username = "admin",
+                Email = "admin@gmail.com",
+                PasswordHash = SecurityHelper.GenerateSaltedHash("admin",
+                    id.ToString()),
+                CreatedAt = DateTime.UtcNow,
+                Status = UserStatuses.Active,
+                LastActivity = DateTime.UtcNow,
+            });
     }
 }
