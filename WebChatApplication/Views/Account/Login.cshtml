@@ -1,0 +1,62 @@
+﻿@model WebChatApplication.Models.User.LoginModel
+
+<h2 class="text-center">Вход</h2>
+
+<main class="form-signin w-100 m-auto">
+    <form asp-action="Login" asp-controller="Account" method="post">
+        <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]"/>
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+        <div class="form-floating mb-2">
+            <input type="text" class="form-control" asp-for="UsernameOrEmail">
+            <label asp-for="UsernameOrEmail">@Html.DisplayNameFor(m => m.UsernameOrEmail)</label>
+            <span asp-validation-for="UsernameOrEmail" class="text-danger"></span>
+        </div>
+        <div class="form-floating mb-2">
+            <input type="password" asp-for="Password" class="form-control" id="password-field"/>
+            <label asp-for="Password">@Html.DisplayNameFor(m => m.Password)</label>
+            <i class="fa-solid fa-eye" id="show-password"></i>
+            <span asp-validation-for="Password" class="text-danger"></span>
+
+        </div>
+        <div class="flex-row mb-2">
+            <div>
+                <input class="form-check-input" type="checkbox" asp-for="RememberMe">
+                <label class="form-check-label" asp-for="RememberMe">@Html.DisplayNameFor(m => m.RememberMe)</label>
+            </div>
+            <span class="password-recovery-span">
+                <a type="submit" asp-action="SendPasswordRecoveryEmail" asp-controller="Account"
+                   style="text-decoration: none;">
+                    Забыли пароль?
+                </a>
+            </span>
+        </div>
+
+        <div class="mb-2">
+            <button class="btn btn-primary w-100 py-2" type="submit">Войти</button>
+            <a asp-action="Register" asp-controller="Account" class="btn btn-secondary w-100 py-2 mt-2">Регистрация</a>
+        </div>
+    </form>
+</main>
+<style>
+    .form-signin {
+        max-width: 330px;
+    }
+
+    .flex-row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        justify-content: space-between;
+    }
+
+    .password-recovery-span {
+        color: #2d79f3;
+        font-weight: 500;
+        cursor: pointer;
+    }
+</style>
+
+<script src="~/js/showPassword.js"></script>
+<script>showPassword("#show-password", "#password-field");</script>

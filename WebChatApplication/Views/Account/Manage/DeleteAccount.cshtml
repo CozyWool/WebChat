@@ -1,0 +1,23 @@
+@{
+    Layout = "Manage/_ManageNav";
+}
+@model WebChatApplication.Models.User.Manage.DeleteAccountModel
+
+<div class="alert alert-warning" role="alert">
+    <p class="mt-auto mb-auto">
+        <strong>Удаление учетной записи необратимо. Пожалуйста, будьте осторожны!</strong>
+    </p>
+</div>
+
+<div>
+    <form method="post" asp-action="DeleteAccount" asp-controller="Account">
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+        
+        <div class="form-floating mb-3">
+            <input asp-for="Password" type="password" class="form-control" autocomplete="password"/>
+            <label asp-for="Password">@Html.DisplayNameFor(m => m.Password)</label>
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+        <button class="w-100 btn btn-lg btn-danger" type="submit">Удалить мой аккаунт</button>
+    </form>
+</div>

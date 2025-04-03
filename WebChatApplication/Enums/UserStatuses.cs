@@ -2,7 +2,7 @@
 
 public enum UserStatuses
 {
-    EmailNotVerified,
+    EmailNotConfirmed,
     Active,
     Deleted,
     Banned

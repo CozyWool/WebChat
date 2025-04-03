@@ -7,7 +7,8 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>@ViewBag.Title</title>
     <link href="~/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-    <link href="~/css/style.css" rel="stylesheet" type="text/css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet" type="text/css"/>
+    <link href="~/css/app_style.css" rel="stylesheet" type="text/css">
     <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico">
     <link type="image/png" sizes="96x96" rel="icon" href="/images/favicon-96x96.png">
 </head>
@@ -24,9 +25,48 @@
                 <ul class="navbar-nav flex-grow-1">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="WebChat" asp-action="Index">Главная</a>
+                            <a class="nav-link text-dark" aa="" asp-controller="WebChat" asp-action="Index">Главная</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Profile">
+                                Мой профиль
+                            </a>
                         </li>
                     </ul>
+
+                    @if (User.Identity is {IsAuthenticated: true})
+                    {
+                        <ul class="navbar-nav float-left">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Profile">
+                                    Здравствуйте, @User.Identity.Name!
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account"
+                                   asp-action="Logout">
+                                    Выйти
+                                </a>
+                            </li>
+                        </ul>
+                    }
+                    else
+                    {
+                        <ul class="navbar-nav float-left">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register"
+                                   asp-route-returnUrl="@Context.Request.Path">
+                                    Зарегистрироваться
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login"
+                                   asp-route-returnUrl="@Context.Request.Path">
+                                    Войти
+                                </a>
+                            </li>
+                        </ul>
+                    }
                 </ul>
             </div>
         </div>

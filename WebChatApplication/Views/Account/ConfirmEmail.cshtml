@@ -1,0 +1,24 @@
+﻿@using System.Security.Claims
+@model WebChatApplication.Models.User.Email.EmailConfirmationModel
+
+<partial name="_StatusMessage" for="@Model.StatusMessage"/>
+@{
+    if (Model.StatusMessage.IsError
+        && !string.IsNullOrEmpty(Model.Email)
+        && User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email).Value == Model.Email)
+    {
+        <form asp-controller="Account" asp-action="ConfirmEmail" method="get">
+            <input asp-for="NeedToSend" type="text" value="true" hidden/>
+            <div class="form-floating mb-2">
+                <input type="email" class="form-control" asp-for="Email" readonly>
+                <label asp-for="Email">@Html.DisplayNameFor(m => m.Email)</label>
+            </div>
+
+            <div class="mb-2">
+                <button class="btn btn-danger btn-lg w-100" type="submit">Повторно отправить подтверждение</button>
+            </div>
+        </form>
+    }
+}
+<a class="btn btn-primary btn-lg w-100 mb-2 mt-2" asp-controller="Account" asp-action="Profile">Вернуться в профиль</a>
+<a class="btn btn-secondary btn-lg w-100" asp-controller="WebChat" asp-action="Index">Вернуться на главную</a>
