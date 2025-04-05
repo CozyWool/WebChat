@@ -11,6 +11,7 @@ public class UserEntity
     public string? EmailConfirmationToken { get; set; }
     public string? PasswordRecoveryToken { get; set; }
     public string PasswordHash { get; set; } = null!;
+    public string ProfilePictureFileName { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
     public UserStatuses Status { get; set; }
     public DateTime? LastActivity { get; set; }

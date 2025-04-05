@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Minio;
+using WebChatApplication.Configurations;
 using WebChatApplication.DataAccess.Contexts;
 using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Extensions;
@@ -26,6 +28,9 @@ public class Startup(IConfiguration configuration)
         services.AddFluentEmail(configuration);
         services.AddScoped<IEmailService, EmailService>();
 
+        services.AddMinio(configuration);
+        services.AddScoped<IS3Service, S3Service>();
+        
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
