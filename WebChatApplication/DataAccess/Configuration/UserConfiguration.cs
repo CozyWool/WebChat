@@ -34,6 +34,10 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
         builder.Property(e => e. PasswordRecoveryToken)
             .HasMaxLength(100)
             .HasColumnName("password_recovery_token");
+        builder.Property(e => e.ProfilePictureFileName)
+            .HasMaxLength(300)
+            .HasDefaultValue("user_default_pfp.png")
+            .HasColumnName("profile_picture_file_name");
         builder.Property(e => e.Status)
             .HasDefaultValue(UserStatuses.EmailNotConfirmed)
             .HasColumnName("status");

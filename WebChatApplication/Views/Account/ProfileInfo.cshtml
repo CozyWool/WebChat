@@ -1,0 +1,103 @@
+﻿@model WebChatApplication.Models.User.ProfileInfoModel
+
+<h3 class="text-center">Профиль @Model.Username</h3>
+<hr class="mb-5"/>
+<div class="row">
+    <div class="col-md-3">
+        <div class="stack text-center">
+            <div class="card">
+                <img class="profile-img" src="@Model.ProfilePictureUrl" alt="Фото профиля не найдено"/>
+                @{
+                    if (Model.IsOnline)
+                    {
+                        <p>🟢 Онлайн</p>
+                    }
+                    else
+                    {
+                        <p>🔴 Был в сети @Model.LastActivityAt</p>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-floating mb-2">
+            <input type="text" class="form-control" asp-for="Username" readonly>
+            <label asp-for="Username">@Html.DisplayNameFor(m => m.Username)</label>
+            <span asp-validation-for="Username" class="text-danger"></span>
+        </div>
+        <div class="form-floating mb-2">
+            <input type="date" asp-for="CreatedAt" class="form-control" readonly/>
+            <label asp-for="CreatedAt">@Html.DisplayNameFor(m => m.CreatedAt)</label>
+        </div>
+        <div class="form-floating mb-2">
+            <input type="date" asp-for="LastActivityAt" class="form-control" readonly/>
+            <label asp-for="LastActivityAt">@Html.DisplayNameFor(m => m.LastActivityAt)</label>
+        </div>
+        <div class="form-floating mb-2">
+            <input type="text" asp-for="RoleName" class="form-control" readonly/>
+            <label asp-for="RoleName">@Html.DisplayNameFor(m => m.RoleName)</label>
+        </div>
+        @{
+            if (User.Identity.IsAuthenticated && User.Identity.Name == Model.Username)
+            {
+                <a class="btn btn-primary btn-lg w-100 mb-2 mt-2" asp-controller="Account"
+                   asp-action="ChangeProfileInfo">
+                    Редактировать профиль
+                </a>
+            }
+        }
+    </div>
+</div>
+
+<style>
+    .profile-img {
+        margin: auto;
+        display: block;
+        max-width: 75%;
+        width: 100%;
+        border: 4px solid;
+        background-color: #eee;
+        aspect-ratio: 1 / 1;
+        position: relative;
+    }
+
+    .stack {
+        width: 100%;
+        max-width: 500px;
+        transition: 0.25s ease;
+    }
+
+    .card {
+        aspect-ratio: 2 / 2;
+        border: 4px solid;
+        background-color: #fff;
+        position: relative;
+        transition: 0.15s ease;
+
+        &:before,
+        &:after {
+            content: "";
+            display: block;
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            border: 4px solid;
+            background-color: #fff;
+            transform-origin: center center;
+            z-index: -1;
+            transition: 0.15s ease;
+            top: 0;
+            left: 0;
+        }
+
+        &:before {
+            transform: translatey(-2%) rotate(-6deg);
+        }
+
+        &:after {
+            transform: translatey(2%) rotate(6deg);
+        }
+    }
+
+</style>

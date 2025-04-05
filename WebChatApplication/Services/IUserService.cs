@@ -11,7 +11,7 @@ public interface IUserService
     Task<UserServiceStatusCodes> Login(LoginModel model);
     Task<bool> Logout();
     Task<UserServiceStatusCodes> Register(RegisterModel model);
-    Task<UserServiceStatusCodes> UpdateProfile(ProfileModel model);
+    Task<UserServiceStatusCodes> UpdateProfile(ChangeProfileInfoModel model);
     Task<UserServiceStatusCodes> UpdateEmail(ChangeEmailModel model);
     Task<UserServiceStatusCodes> UpdatePassword(ChangePasswordModel model);
     Task<UserServiceStatusCodes> UpdatePassword(string emailOrUsername, string newPassword);
@@ -22,4 +22,5 @@ public interface IUserService
     Task<UserServiceStatusCodes> SendPasswordRecoveryEmail(SendPasswordRecoveryEmailModel model);
     Task<UserServiceStatusCodes> VerifyPasswordRecoveryToken(string email, string token);
     Task<UserServiceStatusCodes> ReAuthenticate(string? emailOrUsername);
+    Task<ProfileInfoModel?> GetUserProfile(string username);
 }
