@@ -99,6 +99,7 @@ public class AccountController(IUserService userService) : Controller
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginModel model, string? returnUrl)
     {
+        ViewData["Title"] = "Вход";
         if (!ModelState.IsValid) return View(model);
 
         var statusCode = await userService.Login(model);
@@ -114,10 +115,6 @@ public class AccountController(IUserService userService) : Controller
             case UserServiceStatusCodes.AccountBanned:
                 ModelState.AddModelError("", "Пользователь заблокирован");
                 break;
-            // TODO: Разрешить вход с неподтверждённым аккаунтом, но выводить предупреждение
-            // case UserServiceStatusCodes.AccountEmailNotVerified:
-            //     ModelState.AddModelError("", "Адрес эл. почты не подтверждён");
-            //     break;
             case UserServiceStatusCodes.NotFound:
                 ModelState.AddModelError("", "Пользователь не найден");
                 break;
@@ -142,6 +139,7 @@ public class AccountController(IUserService userService) : Controller
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterModel model, string? returnUrl)
     {
+        ViewData["Title"] = "Регистрация";
         if (!ModelState.IsValid) return View(model);
 
         var statusCode = await userService.Register(model);
@@ -184,15 +182,31 @@ public class AccountController(IUserService userService) : Controller
         return View();
     }
 
-    [HttpGet("profile")]
+    [HttpGet("profile-info")]
     [Authorize]
-    public async Task<IActionResult> Profile(StatusMessageModel statusMessage = null)
+    public async Task<IActionResult> ProfileInfo(string username)
     {
-        ViewData["ActivePage"] = nameof(Profile);
+        ViewData["ActivePage"] = nameof(ChangeProfileInfo);
         ViewData["Title"] = "Профиль";
 
+        var model = await userService.GetUserProfile(username);
+        if (model is null)
+        {
+            return View("_ShowStatusMessageWithButtons", new StatusMessageModel("Профиль не найден", true));
+        }
+
+        return View(model);
+    }
+
+    [HttpGet("change-profile")]
+    [Authorize]
+    public async Task<IActionResult> ChangeProfileInfo(StatusMessageModel statusMessage = null)
+    {
+        ViewData["ActivePage"] = nameof(ChangeProfileInfo);
+        ViewData["Title"] = "Изменение профиля";
+
         var username = User.Identity.Name;
-        var model = new ProfileModel
+        var model = new ChangeProfileInfoModel
         {
             OldUsername = username,
             Username = username,
@@ -207,13 +221,17 @@ public class AccountController(IUserService userService) : Controller
                 CultureInfo.CurrentCulture),
             StatusMessage = statusMessage
         };
-        return View($"Manage/{nameof(Profile)}", model);
+        return View($"Manage/{nameof(ChangeProfileInfo)}", model);
     }
 
-    [HttpPost("profile")]
+    [HttpPost("change-profile")]
     [Authorize]
-    public async Task<IActionResult> Profile(ProfileModel model)
+    public async Task<IActionResult> ChangeProfileInfo(ChangeProfileInfoModel model)
     {
+        ViewData["ActivePage"] = nameof(ChangeProfileInfo);
+        ViewData["Title"] = "Изменение профиля";
+        if (!ModelState.IsValid) return View($"Manage/{nameof(ChangeProfileInfo)}", model);
+
         var statusCode = await userService.UpdateProfile(model);
 
         model.StatusMessage = statusCode switch
@@ -224,7 +242,7 @@ public class AccountController(IUserService userService) : Controller
             _ => model.StatusMessage
         };
 
-        return RedirectToAction("Profile", model.StatusMessage);
+        return RedirectToAction("ChangeProfileInfo", model.StatusMessage);
     }
 
     [HttpGet("email")]
@@ -247,6 +265,10 @@ public class AccountController(IUserService userService) : Controller
     [Authorize]
     public async Task<IActionResult> ChangeEmail(ChangeEmailModel model)
     {
+        ViewData["ActivePage"] = nameof(ChangeEmail);
+        ViewData["Title"] = "Электронная почта";
+        if (!ModelState.IsValid) return View($"Manage/{nameof(ChangeEmail)}", model);
+
         var statusCode = await userService.UpdateEmail(model);
 
         switch (statusCode)
@@ -288,6 +310,8 @@ public class AccountController(IUserService userService) : Controller
     public async Task<IActionResult> ChangePassword(ChangePasswordModel model)
     {
         ViewData["ActivePage"] = nameof(ChangePassword);
+        ViewData["Title"] = "Изменение пароля";
+        if (!ModelState.IsValid) return View($"Manage/{nameof(ChangeEmail)}", model);
 
         var statusCode = await userService.UpdatePassword(model);
 
@@ -319,6 +343,8 @@ public class AccountController(IUserService userService) : Controller
     public async Task<IActionResult> DeleteAccount(DeleteAccountModel model)
     {
         ViewData["ActivePage"] = nameof(DeleteAccount);
+        ViewData["Title"] = "Удаление аккаунта";
+
         var isPasswordValid = await userService.VerifyPassword(User.Identity.Name, model.Password) ==
                               UserServiceStatusCodes.OK;
 
@@ -441,6 +467,5 @@ public class AccountController(IUserService userService) : Controller
         await userService.UpdatePassword(email, model.NewPassword);
         model.StatusMessage = new StatusMessageModel("Пароль успешно восстановлен");
         return View("_ShowStatusMessageWithButtons", model.StatusMessage);
-        // return RedirectToAction("RecoverPassword", model);
     }
 }

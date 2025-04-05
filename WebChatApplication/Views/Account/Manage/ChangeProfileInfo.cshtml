@@ -1,12 +1,12 @@
 @{
     Layout = "Manage/_ManageNav";
 }
-@model WebChatApplication.Models.User.Manage.ProfileModel
+@model WebChatApplication.Models.User.Manage.ChangeProfileInfoModel
 
 <partial name="_StatusMessage" for="StatusMessage"/>
 <div class="row">
     <div class="col-md-6">
-        <form asp-action="Profile" asp-controller="Account" method="post">
+        <form asp-action="ChangeProfileInfo" asp-controller="Account" method="post" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
             <input type="text" asp-for="OldUsername" hidden>
             <div class="form-floating mb-2">
@@ -21,6 +21,11 @@
             <div class="form-floating mb-2">
                 <input type="text" asp-for="RoleName" class="form-control" readonly/>
                 <label asp-for="RoleName">@Html.DisplayNameFor(m => m.RoleName)</label>
+            </div>
+            <div class="input-group mb-2">
+                <label class="input-group-text" asp-for="ProfilePicture">@Html.DisplayNameFor(m => m.ProfilePicture)</label>
+                <input type="file" class="form-control" accept="image/*" asp-for="ProfilePicture">
+                <span asp-validation-for="ProfilePicture" class="text-danger"></span>
             </div>
             <button type="submit" class="w-100 btn btn-lg btn-primary">Сохранить</button>
         </form>

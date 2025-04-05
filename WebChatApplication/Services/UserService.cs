@@ -1,14 +1,11 @@
 using System.Security.Claims;
-using AutoMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.Mvc.Routing;
+using WebChatApplication.Configurations;
 using WebChatApplication.DataAccess.Entities;
 using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Enums;
 using WebChatApplication.Helpers;
-using WebChatApplication.Models;
 using WebChatApplication.Models.User;
 using WebChatApplication.Models.User.Email;
 using WebChatApplication.Models.User.Manage;
@@ -21,13 +18,20 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IEmailService _emailService;
+    private readonly IS3Service _s3Service;
+    private readonly IConfiguration _configuration;
+    private readonly string _bucketId;
 
     public UserService(IUserRepository userRepository, IHttpContextAccessor httpContextAccessor,
-        IEmailService emailService)
+        IEmailService emailService, IS3Service s3Service, IConfiguration configuration)
     {
         _userRepository = userRepository;
         _httpContextAccessor = httpContextAccessor;
         _emailService = emailService;
+        _s3Service = s3Service;
+        _configuration = configuration;
+        _bucketId = _configuration.GetSection("MinioConfiguration").Get<MinioConfiguration>().BucketId;
+
         if (!_httpContextAccessor.HttpContext.User.Identity.IsAuthenticated) return;
 
         var user = _userRepository.GetByEmailOrUsername(_httpContextAccessor.HttpContext.User.Identity.Name).Result;
@@ -176,9 +180,35 @@ public class UserService : IUserService
         var user = await _userRepository.GetByEmailOrUsername(emailOrUsername);
         if (user is null)
             return UserServiceStatusCodes.NotFound;
-        
+
         await Authenticate(user, _httpContextAccessor.HttpContext.User.HasClaim("RememberMe", true.ToString()));
         return UserServiceStatusCodes.OK;
+    }
+
+    public async Task<ProfileInfoModel?> GetUserProfile(string username)
+    {
+        var user = await _userRepository.GetByEmailOrUsername(username);
+        if (user is null)
+            return null;
+
+        var model = new ProfileInfoModel
+        {
+            Username = username,
+            RoleName = user.Role.Name switch
+            {
+                "User" => "Пользователь",
+                "Admin" => "Администратор",
+                "SuperAdmin" => "Супер-Администратор",
+                _ => "Не определена"
+            },
+            CreatedAt = user.CreatedAt,
+            LastActivityAt = user.LastActivity,
+            IsOnline = DateTime.UtcNow - user.LastActivity < TimeSpan.FromMinutes(15),
+            ProfilePictureUrl = await _s3Service.GetUrl(_bucketId, user.ProfilePictureFileName),
+        };
+
+
+        return model;
     }
 
     public async Task<UserServiceStatusCodes> ConfirmEmail(string email, string token)
@@ -212,16 +242,35 @@ public class UserService : IUserService
     }
 
 
-    public async Task<UserServiceStatusCodes> UpdateProfile(ProfileModel model)
+    public async Task<UserServiceStatusCodes> UpdateProfile(ChangeProfileInfoModel model)
     {
-        if (model.OldUsername == model.Username) return UserServiceStatusCodes.OK;
+        if (model.OldUsername == model.Username && model.ProfilePicture is null)
+            return UserServiceStatusCodes.OK;
 
         var user = await _userRepository.GetByEmailOrUsername(model.OldUsername);
-        if (user == null) return UserServiceStatusCodes.NotFound;
-        var isNewUsernameBusy = await _userRepository.GetByEmailOrUsername(model.Username) != null;
-        if (isNewUsernameBusy) return UserServiceStatusCodes.AlreadyExist;
+        if (user == null)
+            return UserServiceStatusCodes.NotFound;
+
+        var isNewUsernameBusy = await _userRepository.GetByEmailOrUsername(model.Username) != null &&
+                                model.Username != model.OldUsername;
+        if (isNewUsernameBusy)
+            return UserServiceStatusCodes.AlreadyExist;
 
         user.Username = model.Username;
+        if (model.ProfilePicture is not null)
+        {
+            var fileName = $"{user.Id}_pfp{Path.GetExtension(model.ProfilePicture.FileName)}";
+            var profilePictureFileName = await _s3Service.UploadFile(_bucketId,
+                fileName,
+                model.ProfilePicture.OpenReadStream());
+            if (!string.IsNullOrEmpty(profilePictureFileName) &&
+                (user.ProfilePictureFileName == "user_default_pfp.png" ||
+                 await _s3Service.DeleteFile(_bucketId, user.ProfilePictureFileName)))
+            {
+                user.ProfilePictureFileName = profilePictureFileName;
+            }
+        }
+
         await _userRepository.Update(user);
         await Authenticate(user, _httpContextAccessor.HttpContext.User.HasClaim("RememberMe", true.ToString()));
         return UserServiceStatusCodes.OK;

@@ -7,7 +7,8 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>@ViewBag.Title</title>
     <link href="~/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet" type="text/css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet"
+          type="text/css"/>
     <link href="~/css/app_style.css" rel="stylesheet" type="text/css">
     <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico">
     <link type="image/png" sizes="96x96" rel="icon" href="/images/favicon-96x96.png">
@@ -17,8 +18,8 @@
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
         <div class="container-fluid">
 
-            <a class="navbar-brand" asp-area="" asp-controller="WebChat" asp-action="Index">
-                <img class="me-1" style="max-height: 40px" src="/images/web-app-manifest-512x512.png" alt=""/>Веб-чат
+            <a class="navbar-brand" asp-area="" asp-controller="WebChat" asp-action="Index" style="max-height: 50px">
+                <img class="me-1" src="/images/web-app-manifest-512x512.png" alt="" style="max-height: 40px"/>Веб-чат
             </a>
 
             <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
@@ -28,7 +29,8 @@
                             <a class="nav-link text-dark" aa="" asp-controller="WebChat" asp-action="Index">Главная</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Profile">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="ProfileInfo"
+                               asp-route-username="@User.Identity.Name">
                                 Мой профиль
                             </a>
                         </li>
@@ -38,7 +40,8 @@
                     {
                         <ul class="navbar-nav float-left">
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Profile">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account"
+                                   asp-action="ProfileInfo" asp-route-username="@User.Identity.Name">
                                     Здравствуйте, @User.Identity.Name!
                                 </a>
                             </li>
