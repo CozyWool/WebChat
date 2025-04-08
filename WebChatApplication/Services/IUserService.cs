@@ -23,4 +23,5 @@ public interface IUserService
     Task<UserServiceStatusCodes> VerifyPasswordRecoveryToken(string email, string token);
     Task<UserServiceStatusCodes> ReAuthenticate(string? emailOrUsername);
     Task<ProfileInfoModel?> GetUserProfile(string username);
+    Task<UserServiceStatusCodes> UpdateLastActivity(string username);
 }
