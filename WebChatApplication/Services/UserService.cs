@@ -211,6 +211,17 @@ public class UserService : IUserService
         return model;
     }
 
+    public async Task<UserServiceStatusCodes> UpdateLastActivity(string username)
+    {
+        var user = await _userRepository.GetByEmailOrUsername(username);
+        if (user is null)
+            return UserServiceStatusCodes.NotFound;
+
+        user.LastActivity = DateTime.UtcNow;
+        await _userRepository.Update(user);
+        return UserServiceStatusCodes.OK;
+    }
+
     public async Task<UserServiceStatusCodes> ConfirmEmail(string email, string token)
     {
         var user = await _userRepository.GetByEmailOrUsername(email);

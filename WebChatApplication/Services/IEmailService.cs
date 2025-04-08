@@ -1,6 +1,4 @@
-﻿using WebChatApplication.Models;
-using WebChatApplication.Models.User;
-using WebChatApplication.Models.User.Email;
+﻿using WebChatApplication.Models.User.Email;
 
 namespace WebChatApplication.Services;
 

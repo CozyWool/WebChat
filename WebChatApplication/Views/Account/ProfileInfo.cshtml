@@ -10,11 +10,15 @@
                 @{
                     if (Model.IsOnline)
                     {
-                        <p>🟢 Онлайн</p>
+                        <p><i class="online-status"></i> Онлайн</p>
+                    }
+                    else if (Model.LastActivityAt is not null)
+                    {
+                        <p><i class="offline-status"></i> Был в сети: @Model.LastActivityAt</p>
                     }
                     else
                     {
-                        <p>🔴 Был в сети @Model.LastActivityAt</p>
+                        <p><i class="never-online-status" style="background: rgb(105, 105, 105)"></i> Не был в сети</p>
                     }
                 }
             </div>
@@ -31,7 +35,16 @@
             <label asp-for="CreatedAt">@Html.DisplayNameFor(m => m.CreatedAt)</label>
         </div>
         <div class="form-floating mb-2">
-            <input type="date" asp-for="LastActivityAt" class="form-control" readonly/>
+            @{
+                if (Model.LastActivityAt is null)
+                {
+                    <input type="text" class="form-control" value="Не был в сети" readonly/>
+                }
+                else
+                {
+                    <input type="date" asp-for="LastActivityAt" class="form-control" readonly/>
+                }
+            }
             <label asp-for="LastActivityAt">@Html.DisplayNameFor(m => m.LastActivityAt)</label>
         </div>
         <div class="form-floating mb-2">
