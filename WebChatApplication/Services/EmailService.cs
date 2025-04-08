@@ -1,7 +1,4 @@
 using FluentEmail.Core;
-using WebChatApplication.DataAccess.Entities;
-using WebChatApplication.Models;
-using WebChatApplication.Models.User;
 using WebChatApplication.Models.User.Email;
 
 namespace WebChatApplication.Services;
