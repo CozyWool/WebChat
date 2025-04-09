@@ -23,7 +23,7 @@ public class HttpPostedFileExtensionsAttribute : DataTypeAttribute
         {
             return _innerAttribute.IsValid(null);
         }
-        
+
         if (value is not IFormFile formFile)
         {
             return false;

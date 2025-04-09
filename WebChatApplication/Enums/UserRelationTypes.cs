@@ -2,7 +2,11 @@
 
 public enum UserRelationTypes
 {
-    FriendRequest,
+    NotRelated,
+    IncomingFriendRequest,
+    OutgoingFriendRequest,
+    BlacklistedByUser,
     Blacklisted,
+    BlacklistedBothWays,
     Friend
 }

@@ -1,0 +1,38 @@
+@using WebChatApplication.Controllers
+@{
+    Layout = "_Layout";
+}
+<div class="container">
+    <div>
+        <div class="row">
+            <div class="col-md-3">
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewData["ActivePage"] == nameof(AccountController.FriendList) ? "active" : "") "
+                           asp-controller="Account" asp-action="FriendList">Друзья</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewData["ActivePage"] == nameof(AccountController.IncomingFriendRequests) ? "active" : "")"
+                           asp-controller="Account" asp-action="IncomingFriendRequests">Заявки в друзья</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewData["ActivePage"] == nameof(AccountController.OutgoingFriendRequests) ? "active" : "")"
+                           asp-controller="Account" asp-action="OutgoingFriendRequests">Исходящие заявки</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewData["ActivePage"] == nameof(AccountController.Blacklist) ? "active" : "")"
+                           asp-controller="Account" asp-action="Blacklist">Черный список</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewData["ActivePage"] == nameof(AccountController.FindFriends) ? "active" : "")"
+                           asp-controller="Account" asp-action="FindFriends">Поиск друзей</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-9">
+                <h4>@ViewData["Title"]</h4>
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+</div>

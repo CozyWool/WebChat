@@ -34,6 +34,12 @@
                                 Мой профиль
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Account"
+                               asp-action="FriendList">
+                                Друзья
+                            </a>
+                        </li>
                     </ul>
 
                     @if (User.Identity is {IsAuthenticated: true})
@@ -81,5 +87,6 @@
     </main>
 </div>
 <script src="~/js/bootstrap.min.js"></script>
+<script src="~/js/dateHumanizer.js"></script>
 </body>
 </html>

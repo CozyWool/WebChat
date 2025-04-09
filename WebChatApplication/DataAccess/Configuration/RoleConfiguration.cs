@@ -13,24 +13,24 @@ public class RoleConfiguration : IEntityTypeConfiguration<RoleEntity>
         builder.ToTable("roles");
 
         builder.Property(e => e.Id)
-            .HasColumnName("id");
+               .HasColumnName("id");
         builder.Property(e => e.Name)
-            .HasMaxLength(100)
-            .HasColumnName("name");
+               .HasMaxLength(100)
+               .HasColumnName("name");
 
         builder.HasData(
-            new RoleEntity
-            {
-                Id = 1,
-                Name = "User"
-            }, new RoleEntity
-            {
-                Id = 2,
-                Name = "Admin"
-            }, new RoleEntity
-            {
-                Id = 3,
-                Name = "SuperAdmin"
-            });
+                        new RoleEntity
+                        {
+                            Id = 1,
+                            Name = "User"
+                        }, new RoleEntity
+                           {
+                               Id = 2,
+                               Name = "Admin"
+                           }, new RoleEntity
+                              {
+                                  Id = 3,
+                                  Name = "SuperAdmin"
+                              });
     }
 }

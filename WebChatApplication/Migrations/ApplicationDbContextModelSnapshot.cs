@@ -227,9 +227,9 @@ namespace WebChatApplication.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("email_confirmation_token");
 
-                    b.Property<DateTime?>("LastActivity")
+                    b.Property<DateTime?>("LastActivityAt")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_activity");
+                        .HasColumnName("last_activity_at");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -243,11 +243,8 @@ namespace WebChatApplication.Migrations
                         .HasColumnName("password_recovery_token");
 
                     b.Property<string>("ProfilePictureFileName")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)")
-                        .HasDefaultValue("user_default_pfp.png")
                         .HasColumnName("profile_picture_file_name");
 
                     b.Property<int>("RoleId")
@@ -282,11 +279,11 @@ namespace WebChatApplication.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("af3aa042-cf34-41f8-877a-43c77b9bf83a"),
-                            CreatedAt = new DateTime(2025, 4, 5, 18, 23, 19, 291, DateTimeKind.Utc).AddTicks(2609),
+                            Id = new Guid("df6b1476-c214-4103-90d0-6fae25e74bca"),
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@gmail.com",
-                            LastActivity = new DateTime(2025, 4, 5, 18, 23, 19, 291, DateTimeKind.Utc).AddTicks(3073),
-                            PasswordHash = "Ugc4Bt8RYVH6mgiQK/dsOgz2d7exWjiqrVWFZkBEb6A=",
+                            LastActivityAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PasswordHash = "bxHPtLKhH1H2j+eNQCNxzR6hMCXByycYrF/fx3Oo/4Y=",
                             RoleId = 3,
                             Status = 1,
                             Username = "admin"
@@ -396,21 +393,21 @@ namespace WebChatApplication.Migrations
 
             modelBuilder.Entity("WebChatApplication.DataAccess.Entities.UserRelationEntity", b =>
                 {
-                    b.HasOne("WebChatApplication.DataAccess.Entities.UserEntity", "User")
+                    b.HasOne("WebChatApplication.DataAccess.Entities.UserEntity", "FromUser")
                         .WithMany("RelatedUsers")
                         .HasForeignKey("FromUserId")
                         .IsRequired()
                         .HasConstraintName("from_user_id_fk");
 
-                    b.HasOne("WebChatApplication.DataAccess.Entities.UserEntity", "RelatedUser")
+                    b.HasOne("WebChatApplication.DataAccess.Entities.UserEntity", "ToUser")
                         .WithMany()
                         .HasForeignKey("ToUserId")
                         .IsRequired()
                         .HasConstraintName("to_user_id_fk");
 
-                    b.Navigation("RelatedUser");
+                    b.Navigation("FromUser");
 
-                    b.Navigation("User");
+                    b.Navigation("ToUser");
                 });
 
             modelBuilder.Entity("WebChatApplication.DataAccess.Entities.ChatEntity", b =>

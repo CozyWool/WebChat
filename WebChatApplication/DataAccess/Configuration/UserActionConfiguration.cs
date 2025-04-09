@@ -13,16 +13,16 @@ public class UserActionConfiguration : IEntityTypeConfiguration<UserActionEntity
         builder.ToTable("user_actions");
 
         builder.Property(e => e.Id)
-            .HasColumnName("id");
+               .HasColumnName("id");
         builder.Property(e => e.UserId)
-            .HasColumnName("user_id");
+               .HasColumnName("user_id");
         builder.Property(e => e.Action)
-            .HasColumnName("action");
+               .HasColumnName("action");
 
         builder.HasOne(e => e.User)
-            .WithMany(e => e.Actions)
-            .HasForeignKey(e => e.UserId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .IsRequired();
+               .WithMany(e => e.Actions)
+               .HasForeignKey(e => e.UserId)
+               .OnDelete(DeleteBehavior.ClientSetNull)
+               .IsRequired();
     }
 }
