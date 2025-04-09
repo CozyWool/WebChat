@@ -15,6 +15,7 @@ public static class SecurityHelper
         saltBytes.CopyTo(contentWithSaltBytes, contentBytes.Length);
         return Convert.ToBase64String(SHA256.HashData(contentWithSaltBytes));
     }
+
     public static string GenerateTokenFromEmail(string email)
     {
         return GenerateSaltedHash(email, DateTime.UtcNow.Ticks.ToString());

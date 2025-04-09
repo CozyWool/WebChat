@@ -13,17 +13,17 @@ public class AttachmentConfiguration : IEntityTypeConfiguration<AttachmentEntity
         builder.ToTable("attachments");
 
         builder.Property(e => e.Id)
-            .HasColumnName("id");
+               .HasColumnName("id");
         builder.Property(e => e.MessageId)
-            .HasColumnName("message_id");
+               .HasColumnName("message_id");
         builder.Property(e => e.Path)
-            .HasColumnName("path")
-            .HasMaxLength(500);
+               .HasColumnName("path")
+               .HasMaxLength(500);
 
         builder.HasOne(e => e.Message)
-            .WithMany(e => e.Attachments)
-            .HasForeignKey(e => e.MessageId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .IsRequired();
+               .WithMany(e => e.Attachments)
+               .HasForeignKey(e => e.MessageId)
+               .OnDelete(DeleteBehavior.ClientSetNull)
+               .IsRequired();
     }
 }

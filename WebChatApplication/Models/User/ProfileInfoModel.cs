@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using WebChatApplication.Enums;
 
 namespace WebChatApplication.Models.User;
 
@@ -17,4 +18,5 @@ public class ProfileInfoModel
 
     public bool IsOnline { get; set; }
     public string ProfilePictureUrl { get; set; }
+    public UserRelationTypes RelationToUser { get; set; }
 }

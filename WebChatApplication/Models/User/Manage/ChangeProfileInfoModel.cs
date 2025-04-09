@@ -17,7 +17,7 @@ public class ChangeProfileInfoModel
 
     [Display(Name = "Фото профиля")]
     [DataType(DataType.Upload)]
-    [HttpPostedFileExtensions(Extensions = "jpg,jpeg,png", ErrorMessage = "Допустимые расширения файла: .jpg, .jpeg, .png")]
+    [HttpPostedFileExtensions(Extensions = "jpg,jpeg,png",
+                                 ErrorMessage = "Допустимые расширения файла: .jpg, .jpeg, .png")]
     public IFormFile? ProfilePicture { get; set; }
-    public string? ProfilePictureFileName { get; set; }
 }

@@ -12,7 +12,7 @@
 <div>
     <form method="post" asp-action="DeleteAccount" asp-controller="Account">
         <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-        
+
         <div class="form-floating mb-3">
             <input asp-for="Password" type="password" class="form-control" autocomplete="password"/>
             <label asp-for="Password">@Html.DisplayNameFor(m => m.Password)</label>

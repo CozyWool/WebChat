@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebChatApplication.Enums;
 using WebChatApplication.Helpers;
+using WebChatApplication.Messages;
 using WebChatApplication.Models;
 using WebChatApplication.Models.User;
 using WebChatApplication.Models.User.Email;
+using WebChatApplication.Models.User.FilterSortPagingFriends;
 using WebChatApplication.Models.User.Manage;
 using WebChatApplication.Models.User.PasswordRecovery;
 using WebChatApplication.Services;
@@ -16,11 +18,21 @@ namespace WebChatApplication.Controllers;
 [Route("account")]
 public class AccountController(IUserService userService) : Controller
 {
-    // Не знаю, почему Claims не обновляются сразу, поэтому приходится костылить с forceSend
-    //TODO: Спросить у Александра как можно это исправить
-    private async Task<StatusMessageModel> SendConfirmationEmail(string? email, bool forceSend = false)
+    [HttpGet("test")]
+    public IActionResult test()
     {
-        if (!forceSend && User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email).Value != email)
+        return View(@"testEmailConfirmationTemplate", new EmailUserModel
+                                                      {
+                                                          Username = "CozyWool",
+                                                          Email = "vsergeev201530@gmail",
+                                                          EmailConfirmationToken = "134124124",
+                                                          EmailConfirmationUrl = "https://141241"
+                                                      });
+    }
+
+    private async Task<StatusMessageModel> SendConfirmationEmail(string? email)
+    {
+        if (User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email).Value != email)
         {
             return new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту", true);
         }
@@ -32,35 +44,37 @@ public class AccountController(IUserService userService) : Controller
 
         var emailToken = SecurityHelper.GenerateTokenFromEmail(email);
         var emailConfirmationUrl = Url.Action(
-            "ConfirmEmail",
-            "Account",
-            new {email = email, token = emailToken},
-            protocol: HttpContext.Request.Scheme);
+                                              "ConfirmEmail",
+                                              "Account",
+                                              new {email, token = emailToken},
+                                              HttpContext.Request.Scheme);
 
         var model = new EmailUserModel
-        {
-            Email = email,
-            EmailConfirmationToken = emailToken,
-            EmailConfirmationUrl = emailConfirmationUrl
-        };
+                    {
+                        Email = email,
+                        EmailConfirmationToken = emailToken,
+                        EmailConfirmationUrl = emailConfirmationUrl
+                    };
         var sendResult = await userService.SendConfirmationEmail(model);
 
         var statusMessage = sendResult switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel(
-                $"Письмо для подтверждения успешно выслано на почту {email}"),
-            UserServiceStatusCodes.AlreadyEmailConfirmed =>
-                new StatusMessageModel("Электронная почта уже подтверждена"),
-            _ => new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту", true)
-        };
+                            {
+                                UserServiceStatusCodes.OK => new StatusMessageModel(
+                                     $"Письмо для подтверждения успешно выслано на почту {email}"),
+                                UserServiceStatusCodes.AlreadyEmailConfirmed =>
+                                    new StatusMessageModel("Электронная почта уже подтверждена"),
+                                _ => new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту",
+                                                            true)
+                            };
         return statusMessage;
     }
 
     [HttpGet("confirm-email")]
     [Authorize]
-    public async Task<IActionResult> ConfirmEmail(EmailConfirmationModel model)
+    public async Task<IActionResult> ConfirmEmail(EmailConfirmationModel model, string? returnUrl)
     {
         ViewData["Title"] = "Подтверждение почты";
+        ViewData["ReturnUrl"] = returnUrl;
         var email = model.Email;
         var token = model.Token;
 
@@ -73,18 +87,21 @@ public class AccountController(IUserService userService) : Controller
         if (email is null || token is null)
         {
             model.StatusMessage = new StatusMessageModel(
-                "Ссылка неверна, проверьте ссылку или попробуйте выслать письмо повторно", true);
+                                                         "Ссылка неверна, проверьте ссылку или попробуйте выслать письмо повторно",
+                                                         true);
             return View(model);
         }
 
         var confirmResult = await userService.ConfirmEmail(email, token);
         model.StatusMessage = confirmResult switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel("Электронная почта успешно подтверждена"),
-            UserServiceStatusCodes.AlreadyEmailConfirmed =>
-                new StatusMessageModel("Электронная почта уже подтверждена"),
-            _ => new StatusMessageModel("Произошла ошибка при подтверждении электронной почты", true)
-        };
+                              {
+                                  UserServiceStatusCodes.OK =>
+                                      new StatusMessageModel("Электронная почта успешно подтверждена"),
+                                  UserServiceStatusCodes.AlreadyEmailConfirmed =>
+                                      new StatusMessageModel("Электронная почта уже подтверждена"),
+                                  _ => new StatusMessageModel("Произошла ошибка при подтверждении электронной почты",
+                                                              true)
+                              };
         return View("_ShowStatusMessageWithButtons", model.StatusMessage);
     }
 
@@ -100,14 +117,20 @@ public class AccountController(IUserService userService) : Controller
     public async Task<IActionResult> Login(LoginModel model, string? returnUrl)
     {
         ViewData["Title"] = "Вход";
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
 
         var statusCode = await userService.Login(model);
         switch (statusCode)
         {
             case UserServiceStatusCodes.OK:
                 if (!string.IsNullOrEmpty(returnUrl))
+                {
                     return LocalRedirect(returnUrl);
+                }
+
                 return RedirectToAction("Index", "WebChat");
             case UserServiceStatusCodes.AccountDeleted:
                 ModelState.AddModelError("", "Пользователь удалён");
@@ -140,14 +163,21 @@ public class AccountController(IUserService userService) : Controller
     public async Task<IActionResult> Register(RegisterModel model, string? returnUrl)
     {
         ViewData["Title"] = "Регистрация";
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
 
         var statusCode = await userService.Register(model);
         switch (statusCode)
         {
             case UserServiceStatusCodes.OK:
                 return RedirectToAction("ConfirmEmail", "Account", new
-                    {email = model.Email, needToSend = true});
+                                                                   {
+                                                                       email = model.Email,
+                                                                       needToSend = true,
+                                                                       returnUrl = returnUrl
+                                                                   });
             case UserServiceStatusCodes.AccountDeleted:
                 ModelState.AddModelError("", "Пользователь удалён");
                 break;
@@ -169,7 +199,10 @@ public class AccountController(IUserService userService) : Controller
         ViewData["Title"] = "Выход из аккаунта";
 
         if (await userService.Logout())
+        {
             return RedirectToAction("Login", "Account");
+        }
+
         return RedirectToAction("Index", "WebChat");
     }
 
@@ -207,20 +240,20 @@ public class AccountController(IUserService userService) : Controller
 
         var username = User.Identity.Name;
         var model = new ChangeProfileInfoModel
-        {
-            OldUsername = username,
-            Username = username,
-            RoleName = User.Claims.FirstOrDefault(x => x.Type == "RoleName").Value switch
-            {
-                "User" => "Пользователь",
-                "Admin" => "Администратор",
-                "SuperAdmin" => "Супер-Администратор",
-                _ => "Не определена"
-            },
-            CreatedAt = DateTime.Parse(User.Claims.FirstOrDefault(claim => claim.Type == "CreatedAt").Value,
-                CultureInfo.CurrentCulture),
-            StatusMessage = statusMessage
-        };
+                    {
+                        OldUsername = username,
+                        Username = username,
+                        RoleName = User.Claims.FirstOrDefault(x => x.Type == "RoleName").Value switch
+                                   {
+                                       "User"       => "Пользователь",
+                                       "Admin"      => "Администратор",
+                                       "SuperAdmin" => "Супер-Администратор",
+                                       _            => "Не определена"
+                                   },
+                        CreatedAt = DateTime.Parse(User.Claims.FirstOrDefault(claim => claim.Type == "CreatedAt").Value,
+                                                   CultureInfo.CurrentCulture),
+                        StatusMessage = statusMessage
+                    };
         return View($"Manage/{nameof(ChangeProfileInfo)}", model);
     }
 
@@ -230,19 +263,38 @@ public class AccountController(IUserService userService) : Controller
     {
         ViewData["ActivePage"] = nameof(ChangeProfileInfo);
         ViewData["Title"] = "Изменение профиля";
-        if (!ModelState.IsValid) return View($"Manage/{nameof(ChangeProfileInfo)}", model);
+        if (!ModelState.IsValid)
+        {
+            return View($"Manage/{nameof(ChangeProfileInfo)}", model);
+        }
 
         var statusCode = await userService.UpdateProfile(model);
 
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel("Профиль успешно обновлён"),
-            UserServiceStatusCodes.AlreadyExist => new StatusMessageModel("Имя пользователя уже используется", true),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден", true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.OK => new StatusMessageModel("Профиль успешно обновлён"),
+                                  UserServiceStatusCodes.AlreadyExist =>
+                                      new StatusMessageModel("Имя пользователя уже используется", true),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  _ => model.StatusMessage
+                              };
 
         return RedirectToAction("ChangeProfileInfo", model.StatusMessage);
+    }
+
+    [HttpPost("delete-profile-picture")]
+    [Authorize]
+    public async Task<IActionResult> DeleteProfilePicture(string username)
+    {
+        var result = await userService.DeleteProfilePicture(username);
+        if (!result)
+        {
+            return Json(BadRequest());
+        }
+
+        return Json(Ok());
+
     }
 
     [HttpGet("email")]
@@ -254,10 +306,10 @@ public class AccountController(IUserService userService) : Controller
 
         var email = User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Email).Value;
         var model = new ChangeEmailModel
-        {
-            Email = email,
-            StatusMessage = statusMessage
-        };
+                    {
+                        Email = email,
+                        StatusMessage = statusMessage
+                    };
         return View($"Manage/{nameof(ChangeEmail)}", model);
     }
 
@@ -267,14 +319,17 @@ public class AccountController(IUserService userService) : Controller
     {
         ViewData["ActivePage"] = nameof(ChangeEmail);
         ViewData["Title"] = "Электронная почта";
-        if (!ModelState.IsValid) return View($"Manage/{nameof(ChangeEmail)}", model);
+        if (!ModelState.IsValid)
+        {
+            return View($"Manage/{nameof(ChangeEmail)}", model);
+        }
 
         var statusCode = await userService.UpdateEmail(model);
 
         switch (statusCode)
         {
             case UserServiceStatusCodes.OK:
-                await SendConfirmationEmail(model.NewEmail, true);
+                await SendConfirmationEmail(model.NewEmail);
                 model.StatusMessage = new StatusMessageModel("Эл. почта успешно обновлена. Проверьте почту.");
                 break;
             case UserServiceStatusCodes.AlreadyExist:
@@ -299,9 +354,9 @@ public class AccountController(IUserService userService) : Controller
         ViewData["Title"] = "Изменение пароля";
 
         var model = new ChangePasswordModel
-        {
-            StatusMessage = statusMessage,
-        };
+                    {
+                        StatusMessage = statusMessage
+                    };
         return View($"Manage/{nameof(ChangePassword)}", model);
     }
 
@@ -311,19 +366,25 @@ public class AccountController(IUserService userService) : Controller
     {
         ViewData["ActivePage"] = nameof(ChangePassword);
         ViewData["Title"] = "Изменение пароля";
-        if (!ModelState.IsValid) return View($"Manage/{nameof(ChangeEmail)}", model);
+        if (!ModelState.IsValid)
+        {
+            return View($"Manage/{nameof(ChangeEmail)}", model);
+        }
 
         var statusCode = await userService.UpdatePassword(model);
 
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel("Пароль успешно обновлён"),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден", true),
-            UserServiceStatusCodes.NotValid => new StatusMessageModel("Текущий пароль введён неверно", true),
-            UserServiceStatusCodes.AlreadyExist => new StatusMessageModel("Новый пароль должен отличаться от текущего",
-                true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.OK => new StatusMessageModel("Пароль успешно обновлён"),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  UserServiceStatusCodes.NotValid =>
+                                      new StatusMessageModel("Текущий пароль введён неверно", true),
+                                  UserServiceStatusCodes.AlreadyExist => new
+                                      StatusMessageModel("Новый пароль должен отличаться от текущего",
+                                                         true),
+                                  _ => model.StatusMessage
+                              };
 
         return RedirectToAction("ChangePassword", model.StatusMessage);
     }
@@ -365,9 +426,9 @@ public class AccountController(IUserService userService) : Controller
     {
         ViewData["Title"] = "Восстановление пароля";
         var model = new SendPasswordRecoveryEmailModel
-        {
-            StatusMessage = statusMessage,
-        };
+                    {
+                        StatusMessage = statusMessage
+                    };
         return View($"PasswordRecovery/{nameof(SendPasswordRecoveryEmail)}", model);
     }
 
@@ -379,41 +440,44 @@ public class AccountController(IUserService userService) : Controller
         if (email is null)
         {
             return RedirectToAction("SendPasswordRecoveryEmail",
-                new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту", true));
+                                    new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту",
+                                                           true));
         }
 
         var passwordRecoveryToken = SecurityHelper.GenerateTokenFromEmail(email);
         var passwordRecoveryUrl = Url.Action(
-            "RecoverPassword",
-            "Account",
-            new {email = email, token = passwordRecoveryToken},
-            protocol: HttpContext.Request.Scheme);
+                                             "RecoverPassword",
+                                             "Account",
+                                             new {email, token = passwordRecoveryToken},
+                                             HttpContext.Request.Scheme);
         model.PasswordRecoveryToken = passwordRecoveryToken;
         model.PasswordRecoveryUrl = passwordRecoveryUrl;
 
         var statusCode = await userService.SendPasswordRecoveryEmail(model);
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel("Письмо отправлено"),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден", true),
-            UserServiceStatusCodes.NotValid => new StatusMessageModel("Произошла ошибка при отправке письма", true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.OK => new StatusMessageModel("Письмо отправлено"),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  UserServiceStatusCodes.NotValid =>
+                                      new StatusMessageModel("Произошла ошибка при отправке письма", true),
+                                  _ => model.StatusMessage
+                              };
         return RedirectToAction("SendPasswordRecoveryEmail", model.StatusMessage);
     }
 
     [HttpGet("recover-password")]
     [AllowAnonymous]
     public async Task<IActionResult> RecoverPassword(string? email, string? token,
-        StatusMessageModel? statusMessage = null)
+                                                     StatusMessageModel? statusMessage = null)
     {
         ViewData["Title"] = "Восстановление пароля";
 
         var model = new PasswordRecoveryModel
-        {
-            Email = email,
-            PasswordRecoveryToken = token
-        };
+                    {
+                        Email = email,
+                        PasswordRecoveryToken = token
+                    };
 
         if (email is null || token is null)
         {
@@ -424,17 +488,23 @@ public class AccountController(IUserService userService) : Controller
 
         var statusCode = await userService.VerifyPasswordRecoveryToken(email, token);
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.AccountBanned => new StatusMessageModel("Пользователь заблокирован", true),
-            UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён", true),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден", true),
-            UserServiceStatusCodes.NotValid => new StatusMessageModel("Произошла ошибка при восстановлении пароля",
-                true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.AccountBanned =>
+                                      new StatusMessageModel("Пользователь заблокирован", true),
+                                  UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён",
+                                       true),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  UserServiceStatusCodes.NotValid => new
+                                      StatusMessageModel("Произошла ошибка при восстановлении пароля",
+                                                         true),
+                                  _ => model.StatusMessage
+                              };
 
         if (string.IsNullOrEmpty(statusMessage.Message))
+        {
             return View($"PasswordRecovery/{nameof(RecoverPassword)}", model);
+        }
 
         model.StatusMessage.AddNewMessage(statusMessage);
 
@@ -446,26 +516,164 @@ public class AccountController(IUserService userService) : Controller
     public async Task<IActionResult> RecoverPassword(PasswordRecoveryModel model)
     {
         ViewData["Title"] = "Восстановление пароля";
-        if (!ModelState.IsValid) return View($"PasswordRecovery/{nameof(RecoverPassword)}", model);
+        if (!ModelState.IsValid)
+        {
+            return View($"PasswordRecovery/{nameof(RecoverPassword)}", model);
+        }
 
         var email = model.Email;
         var token = model.PasswordRecoveryToken;
 
         var statusCode = await userService.VerifyPasswordRecoveryToken(email, token);
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.AccountBanned => new StatusMessageModel("Пользователь заблокирован", true),
-            UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён", true),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден", true),
-            UserServiceStatusCodes.NotValid => new StatusMessageModel("Произошла ошибка при восстановлении пароля",
-                true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.AccountBanned =>
+                                      new StatusMessageModel("Пользователь заблокирован", true),
+                                  UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён",
+                                       true),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  UserServiceStatusCodes.NotValid => new
+                                      StatusMessageModel("Произошла ошибка при восстановлении пароля",
+                                                         true),
+                                  _ => model.StatusMessage
+                              };
 
-        if (statusCode != UserServiceStatusCodes.OK) return RedirectToAction("RecoverPassword", model.StatusMessage);
+        if (statusCode != UserServiceStatusCodes.OK)
+        {
+            return RedirectToAction("RecoverPassword", model.StatusMessage);
+        }
 
         await userService.UpdatePassword(email, model.NewPassword);
         model.StatusMessage = new StatusMessageModel("Пароль успешно восстановлен");
         return View("_ShowStatusMessageWithButtons", model.StatusMessage);
+    }
+
+    //TODO: Добавить status message(обработка UserServiceStatusCodes)
+    [Authorize]
+    [HttpPost("send-friend-request")]
+    public async Task<IActionResult> SendFriendRequest(string usernameTo, string? returnUrl = null)
+    {
+        await userService.SendFriendRequest(usernameTo);
+        return !string.IsNullOrEmpty(returnUrl)
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+    }
+
+    [Authorize]
+    [HttpPost("accept-friend-request")]
+    public async Task<IActionResult> AcceptFriendRequest(string usernameTo, string? returnUrl = null)
+    {
+        await userService.AcceptFriendRequest(usernameTo);
+        return !string.IsNullOrEmpty(returnUrl)
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+    }
+
+    [Authorize]
+    [HttpPost("cancel-friend-request")]
+    public async Task<IActionResult> CancelFriendRequest(string usernameTo, string? returnUrl = null)
+    {
+        await userService.CancelFriendRequest(usernameTo);
+        return !string.IsNullOrEmpty(returnUrl)
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+    }
+
+    [Authorize]
+    [HttpPost("delete-friend")]
+    public async Task<IActionResult> DeleteFriend(string usernameTo, string? returnUrl = null)
+    {
+        await userService.DeleteFriend(usernameTo);
+        return !string.IsNullOrEmpty(returnUrl)
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+    }
+
+    [Authorize]
+    [HttpPost("remove-from-blacklist")]
+    public async Task<IActionResult> RemoveFromBlacklist(string usernameTo, string? returnUrl = null)
+    {
+        await userService.RemoveFromBlacklist(usernameTo);
+        return !string.IsNullOrEmpty(returnUrl)
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+    }
+
+    [Authorize]
+    [HttpPost("add-to-blacklist")]
+    public async Task<IActionResult> AddToBlacklist(string usernameTo, string? returnUrl = null)
+    {
+        await userService.AddToBlacklist(usernameTo);
+        return !string.IsNullOrEmpty(returnUrl)
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+    }
+
+    [HttpGet("friends")]
+    [Authorize]
+    public async Task<IActionResult> FriendList()
+    {
+        ViewData["ActivePage"] = nameof(FriendList);
+        ViewData["Title"] = "Список друзей";
+
+
+        var model = await userService.GetUserCards(User.Identity.Name, UserRelationTypes.Friend);
+        return View($"RelatedUsers/{nameof(FriendList)}", model);
+    }
+
+    [HttpGet("incoming-friend-requests")]
+    [Authorize]
+    public async Task<IActionResult> IncomingFriendRequests()
+    {
+        ViewData["ActivePage"] = nameof(IncomingFriendRequests);
+        ViewData["Title"] = "Входящие заявки";
+
+
+        var model = await userService.GetUserCards(User.Identity.Name, UserRelationTypes.IncomingFriendRequest);
+        return View($"RelatedUsers/{nameof(IncomingFriendRequests)}", model);
+    }
+
+    [HttpGet("outgoing-friend-requests")]
+    [Authorize]
+    public async Task<IActionResult> OutgoingFriendRequests()
+    {
+        ViewData["ActivePage"] = nameof(OutgoingFriendRequests);
+        ViewData["Title"] = "Исходящие заявки";
+
+
+        var model = await userService.GetUserCards(User.Identity.Name, UserRelationTypes.OutgoingFriendRequest);
+        return View($"RelatedUsers/{nameof(OutgoingFriendRequests)}", model);
+    }
+
+    [HttpGet("blacklist")]
+    [Authorize]
+    public async Task<IActionResult> Blacklist()
+    {
+        ViewData["ActivePage"] = nameof(Blacklist);
+        ViewData["Title"] = "Черный список";
+
+
+        var model = await userService.GetUserCards(User.Identity.Name, UserRelationTypes.Blacklisted);
+        model.AddRange(await userService.GetUserCards(User.Identity.Name, UserRelationTypes.BlacklistedBothWays));
+        return View($"RelatedUsers/{nameof(FriendList)}", model);
+    }
+
+    [HttpGet("find-friends")]
+    [Authorize]
+    public async Task<IActionResult> FindFriends(FindFriendsRequest request)
+    {
+        ViewData["ActivePage"] = nameof(FindFriends);
+        ViewData["Title"] = "Поиск друзей";
+
+        var (users, count) = await userService.GetFindFriendsPagedSortedFiltered(request);
+        var model = new FindFriendsViewModel
+                    {
+                        Users = users,
+                        PageViewModel = new FriendPageViewModel(count, request.PageNumber, request.PageSize),
+                        SortViewModel = new FriendSortViewModel(request.SortOrder),
+                        FilterViewModel = new FriendFilterViewModel(request.Username),
+                    };
+        return View($"RelatedUsers/{nameof(FindFriends)}", model);
     }
 }

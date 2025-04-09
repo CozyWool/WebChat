@@ -16,15 +16,16 @@ public class UserRelationConfiguration : IEntityTypeConfiguration<UserRelationEn
         builder.Property(e => e.ToUserId).HasColumnName("to_user_id");
         builder.Property(e => e.RelationType).HasColumnName("relation_type");
 
-        builder.HasOne(d => d.RelatedUser).WithMany()
-            .HasForeignKey(d => d.ToUserId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("to_user_id_fk");
+        builder.HasOne(d => d.ToUser)
+               .WithMany()
+               .HasForeignKey(d => d.ToUserId)
+               .OnDelete(DeleteBehavior.ClientSetNull)
+               .HasConstraintName("to_user_id_fk");
 
-        builder.HasOne(d => d.User)
-            .WithMany(p => p.RelatedUsers)
-            .HasForeignKey(d => d.FromUserId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("from_user_id_fk");
+        builder.HasOne(d => d.FromUser)
+               .WithMany(p => p.RelatedUsers)
+               .HasForeignKey(d => d.FromUserId)
+               .OnDelete(DeleteBehavior.ClientSetNull)
+               .HasConstraintName("from_user_id_fk");
     }
 }

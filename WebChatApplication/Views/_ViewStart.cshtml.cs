@@ -6,6 +6,5 @@ public class _ViewStart : PageModel
 {
     public void OnGet()
     {
-        
     }
 }
