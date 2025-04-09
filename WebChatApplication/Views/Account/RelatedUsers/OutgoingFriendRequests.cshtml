@@ -1,0 +1,11 @@
+@{
+    Layout = "RelatedUsers/_RelatedUsersNav";
+}
+@model List<WebChatApplication.Models.User.UserCardModel>
+
+<div>
+    @foreach (var user in Model)
+    {
+        <partial name="UserCard" model="user"></partial>
+    }
+</div>

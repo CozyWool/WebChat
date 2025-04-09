@@ -1,0 +1,75 @@
+@{
+    Layout = "RelatedUsers/_RelatedUsersNav";
+}
+@using WebChatApplication.Enums
+@model WebChatApplication.Models.User.FilterSortPagingFriends.FindFriendsViewModel
+
+<form method="get" class="form-inline">
+    <div class="form-floating mb-2">
+        <input name="username" asp-for="@Model.FilterViewModel.SelectedUsername" class="form-control"/>
+        <label>@Html.DisplayNameFor(m => m.FilterViewModel.SelectedUsername)</label>
+    </div>
+
+    <div class="form-floating mb-2">
+        <input name="pageSize" asp-for="@Model.PageViewModel.PageSize" class="form-control"/>
+        <label>@Html.DisplayNameFor(m => m.PageViewModel.PageSize)</label>
+    </div>
+
+    <div class="form-floating mb-2">
+        <select name="sortOrder" asp-items="Html.GetEnumSelectList<FriendSortState>()" asp-for="SortViewModel.Current"
+                class="form-select">
+        </select>
+        <label>@Html.DisplayNameFor(m => m.SortViewModel.Current)</label>
+    </div>
+
+    <input type="submit" value="Поиск" class="btn w-100 btn-outline-dark"/>
+</form>
+
+<div>
+
+    @foreach (var user in Model.Users)
+    {
+        <partial name="UserCard" model="user"></partial>
+    }
+    @if (Model.PageViewModel.HasPreviousPage)
+    {
+        <a asp-action="FindFriends"
+           asp-controller="Account"
+           asp-route-page="@(Model.PageViewModel.PageNumber - 1)"
+           asp-route-pageSize="@(Model.PageViewModel.PageSize)"
+           asp-route-username="@(Model.FilterViewModel.SelectedUsername)"
+           asp-route-sortOrder="@(Model.SortViewModel.Current)"
+           class="btn btn-outline-dark">
+            <i class="glyphicon glyphicon-chevron-left"></i>
+            <b>@Html.DisplayNameFor(m => m.PageViewModel.HasPreviousPage)</b>
+        </a>
+    }
+
+    @if (Model.PageViewModel.HasNextPage)
+    {
+        <a asp-action="FindFriends"
+           asp-controller="Account"
+           asp-route-page="@(Model.PageViewModel.PageNumber + 1)"
+           asp-route-pageSize="@(Model.PageViewModel.PageSize)"
+           asp-route-username="@(Model.FilterViewModel.SelectedUsername)"
+           asp-route-sortOrder="@(Model.SortViewModel.Current)"
+           class="btn btn-outline-dark">
+            <b>@Html.DisplayNameFor(m => m.PageViewModel.HasNextPage)</b>
+            <i class="glyphicon glyphicon-chevron-right"></i>
+        </a>
+    }
+
+    @if (Model.PageViewModel.TotalPages != 0)
+    {
+        <p class="d-inline">
+            @Html.DisplayNameFor(m => m.PageViewModel.PageNumber)
+            <b> @Model.PageViewModel.PageNumber</b> из <b> @Model.PageViewModel.TotalPages </b>
+        </p>
+    }
+    else
+    {
+        <p class="d-inline">
+            <b>По вашему запросу ничего не найдено.</b>
+        </p>
+    }
+</div>

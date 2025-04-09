@@ -20,7 +20,8 @@
                     <span asp-validation-for="Username" class="text-danger"></span>
                 </div>
                 <div class="form-floating mb-2">
-                    <input type="password" asp-for="Password" autocomplete="password" class="form-control" id="password-field"/>
+                    <input type="password" asp-for="Password" autocomplete="password" class="form-control"
+                           id="password-field"/>
                     <label asp-for="Password">@Html.DisplayNameFor(m => m.Password)</label>
                     <i class="fa-solid fa-eye" id="show-password"></i>
                     <span asp-validation-for="Password" class="text-danger"></span>
@@ -33,7 +34,8 @@
                 </div>
                 <div class="mb-2">
                     <button type="submit" class="btn btn-primary w-100 py-2">Регистрация</button>
-                    <a asp-action="Login" asp-controller="Account" class="btn btn-secondary w-100 py-2 mt-2">Уже зарегистрированы? Войти</a>
+                    <a asp-action="Login" asp-controller="Account" class="btn btn-secondary w-100 py-2 mt-2">Уже
+                        зарегистрированы? Войти</a>
                 </div>
             </div>
         </form>
@@ -41,7 +43,7 @@
 </div>
 
 <style>
-    .form-register{
+    .form-register {
         max-width: 330px;
     }
 </style>

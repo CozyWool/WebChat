@@ -1,10 +1,12 @@
-﻿@model WebChatApplication.Models.User.ProfileInfoModel
+﻿@using System.Globalization
+@using WebChatApplication.Enums
+@model WebChatApplication.Models.User.ProfileInfoModel
 
 <h3 class="text-center">Профиль @Model.Username</h3>
 <hr class="mb-5"/>
 <div class="row">
     <div class="col-md-3">
-        <div class="stack text-center">
+        <div class="stack text-center mb-4">
             <div class="card">
                 <img class="profile-img" src="@Model.ProfilePictureUrl" alt="Фото профиля не найдено"/>
                 @{
@@ -14,15 +16,78 @@
                     }
                     else if (Model.LastActivityAt is not null)
                     {
-                        <p><i class="offline-status"></i> Был в сети: @Model.LastActivityAt</p>
+                        <p><i class="offline-status"></i> Был(а) в сети: <date-humanizer utc-date-time="@Model.LastActivityAt"/></p>
                     }
                     else
                     {
-                        <p><i class="never-online-status" style="background: rgb(105, 105, 105)"></i> Не был в сети</p>
+                        <p><i class="never-online-status"></i> Не был(а) в сети</p>
                     }
                 }
             </div>
         </div>
+        @if (User.Identity.IsAuthenticated && User.Identity.Name != Model.Username)
+        {
+            <form method="post">
+                <input asp-for="Username" name="usernameTo" hidden/>
+
+                @if (Model.RelationToUser is UserRelationTypes.NotRelated)
+                {
+                    <button asp-controller="Account" asp-action="SendFriendRequest"
+                            class="btn btn-success w-100 mb-2">
+                        Добавить в друзья
+                    </button>
+                }
+                else if (Model.RelationToUser is UserRelationTypes.IncomingFriendRequest)
+                {
+                    <button asp-controller="Account" asp-action="AcceptFriendRequest"
+                            class="btn btn-success w-100 mb-2">
+                        Принять заявку в друзья
+                    </button>
+                }
+                else if (Model.RelationToUser is UserRelationTypes.OutgoingFriendRequest)
+                {
+                    <button asp-controller="Account" asp-action="CancelFriendRequest"
+                            class="btn btn-danger w-100 mb-2">
+                        Отменить заявку в друзья
+                    </button>
+                }
+
+                @if (Model.RelationToUser is UserRelationTypes.Friend)
+                {
+                    <div class="alert alert-primary" role="alert">
+                        В друзьях
+                    </div>
+                    <button asp-controller="Account" asp-action="DeleteFriend" class="btn btn-secondary w-100 mb-2">
+                        Удалить из друзей
+                    </button>
+                }
+
+                @if (Model.RelationToUser is UserRelationTypes.BlacklistedByUser or UserRelationTypes.BlacklistedBothWays)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        Пользователь заблокировал вас.
+                    </div>
+                }
+
+
+                @if (Model.RelationToUser is UserRelationTypes.Blacklisted or UserRelationTypes.BlacklistedBothWays)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        Вы заблокировали пользователя.
+                    </div>
+                    <button asp-controller="Account" asp-action="RemoveFromBlacklist" class="btn btn-dark w-100">
+                        Удалить из черного списка
+                    </button>
+                }
+                else
+                {
+                    <button asp-controller="Account" asp-action="AddToBlacklist" class="btn btn-dark w-100">
+                        Добавить в черный список
+                    </button>
+                }
+
+            </form>
+        }
     </div>
     <div class="col-md-6">
         <div class="form-floating mb-2">
@@ -31,18 +96,20 @@
             <span asp-validation-for="Username" class="text-danger"></span>
         </div>
         <div class="form-floating mb-2">
-            <input type="date" asp-for="CreatedAt" class="form-control" readonly/>
+            <input class="form-control date-utc-input"
+                   data-utc="@Model.CreatedAt.ToString()" readonly/>
             <label asp-for="CreatedAt">@Html.DisplayNameFor(m => m.CreatedAt)</label>
         </div>
         <div class="form-floating mb-2">
             @{
                 if (Model.LastActivityAt is null)
                 {
-                    <input type="text" class="form-control" value="Не был в сети" readonly/>
+                    <input type="text" class="form-control" value="Не был(а) в сети" readonly/>
                 }
                 else
                 {
-                    <input type="date" asp-for="LastActivityAt" class="form-control" readonly/>
+                    <input class="form-control date-utc-input"
+                           data-utc="@Model.LastActivityAt.ToString()" readonly/>
                 }
             }
             <label asp-for="LastActivityAt">@Html.DisplayNameFor(m => m.LastActivityAt)</label>

@@ -1,4 +1,5 @@
 ﻿using WebChatApplication.Enums;
+using WebChatApplication.Messages;
 using WebChatApplication.Models.User;
 using WebChatApplication.Models.User.Email;
 using WebChatApplication.Models.User.Manage;
@@ -22,6 +23,19 @@ public interface IUserService
     Task<UserServiceStatusCodes> SendPasswordRecoveryEmail(SendPasswordRecoveryEmailModel model);
     Task<UserServiceStatusCodes> VerifyPasswordRecoveryToken(string email, string token);
     Task<UserServiceStatusCodes> ReAuthenticate(string? emailOrUsername);
-    Task<ProfileInfoModel?> GetUserProfile(string username);
+    Task<ProfileInfoModel?> GetUserProfile(string profileUsername);
+    Task<string> GetProfilePictureUrl(string username);
+    Task<bool> DeleteProfilePicture(string username);
+    Task<(List<UserCardModel> items, int count)> GetFindFriendsPagedSortedFiltered(FindFriendsRequest request);
+    Task<List<UserCardModel>> GetUserCards(string username, UserRelationTypes? relationType = null);
     Task<UserServiceStatusCodes> UpdateLastActivity(string username);
+
+    //TODO: Подумать, переносить ли все методы ниже в отдельный сервис IUserRelationService
+    Task<UserServiceStatusCodes> SendFriendRequest(string usernameTo);
+    Task<UserServiceStatusCodes> AcceptFriendRequest(string usernameTo);
+    Task<UserServiceStatusCodes> CancelFriendRequest(string usernameTo);
+    Task<UserServiceStatusCodes> DeleteFriend(string usernameTo);
+    Task<UserServiceStatusCodes> RemoveFromBlacklist(string usernameTo);
+    Task<UserServiceStatusCodes> AddToBlacklist(string usernameTo);
+    bool IsOnline(DateTime? userLastActivity);
 }

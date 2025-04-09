@@ -13,36 +13,36 @@ public class ChatConfiguration : IEntityTypeConfiguration<ChatEntity>
         builder.ToTable("chats");
 
         builder.Property(e => e.Id)
-            .HasColumnName("id");
+               .HasColumnName("id");
         builder.Property(e => e.OwnerId)
-            .HasColumnName("owner_id");
+               .HasColumnName("owner_id");
         builder.Property(e => e.ChatType)
-            .HasColumnName("chat_type");
+               .HasColumnName("chat_type");
         builder.Property(e => e.Name)
-            .HasMaxLength(100)
-            .HasColumnName("name");
+               .HasMaxLength(100)
+               .HasColumnName("name");
         builder.Property(e => e.CreatedAt)
-            .HasColumnName("created_at");
+               .HasColumnName("created_at");
 
         builder.HasOne(e => e.Owner)
-            .WithMany()
-            .HasForeignKey(e => e.OwnerId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("owner_id_fk");
+               .WithMany()
+               .HasForeignKey(e => e.OwnerId)
+               .OnDelete(DeleteBehavior.ClientSetNull)
+               .HasConstraintName("owner_id_fk");
 
         builder.HasMany(e => e.Users)
-            .WithMany(e => e.Chats)
-            .UsingEntity(joinEntity =>
-            {
-                joinEntity.Property("UsersId").HasColumnName("user_id");
-                joinEntity.Property("ChatsId").HasColumnName("chat_id");
-                joinEntity.ToTable("users_chats");
-            });
+               .WithMany(e => e.Chats)
+               .UsingEntity(joinEntity =>
+                            {
+                                joinEntity.Property("UsersId").HasColumnName("user_id");
+                                joinEntity.Property("ChatsId").HasColumnName("chat_id");
+                                joinEntity.ToTable("users_chats");
+                            });
 
         builder.HasMany(e => e.Messages)
-            .WithOne()
-            .HasForeignKey(e => e.ChatId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .HasConstraintName("chat_id_fk");
+               .WithOne()
+               .HasForeignKey(e => e.ChatId)
+               .OnDelete(DeleteBehavior.ClientSetNull)
+               .HasConstraintName("chat_id_fk");
     }
 }

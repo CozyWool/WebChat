@@ -1,6 +1,6 @@
 ﻿using WebChatApplication.Services;
 
-namespace WebChatApplication.ActionFilters;
+namespace WebChatApplication.Middlewares;
 
 public class LastActivityMiddleware
 {

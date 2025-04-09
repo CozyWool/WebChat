@@ -1,0 +1,114 @@
+﻿@using WebChatApplication.Enums
+@model WebChatApplication.Models.User.UserCardModel
+
+<div>
+    <div class="user-card mb-3">
+        <div class="card_load">
+            <a href="@Url.Action(
+                                 "ProfileInfo",
+                                 "Account",
+                                 new {username = Model.Username},
+                                 Context.Request.Scheme)">
+                <img src="@Model.ProfilePictureUrl" class="img-fluid rounded-start" alt="..."
+                     style="width: 150px; height: 70px; border-radius: 50%;"></a>
+        </div>
+        <div class="user-card-content">
+            <div class="card_load_extreme_title">
+                <a href="@Url.Action(
+                                     "ProfileInfo",
+                                     "Account",
+                                     new {username = Model.Username},
+                                     Context.Request.Scheme)"
+                   class="username-link">@Model.Username</a>
+            </div>
+            <div class="card_load_extreme_description">
+                <div class="user-card-buttons">
+                    <form method="post" class="d-flex justify-content-between w-100"
+                          style="flex-direction: row;">
+                        <input asp-for="@Model.Username" name="usernameTo" hidden/>
+
+                        @if (Model.RelationType is UserRelationTypes.NotRelated)
+                        {
+                            <button asp-controller="Account" asp-action="SendFriendRequest"
+                                    asp-route-returnUrl="@Context.Request.Path"
+                                    class="btn btn-success flex-grow-1 me-2 fixed-size">
+                                Добавить в друзья
+                            </button>
+                        }
+                        else if (Model.RelationType is UserRelationTypes.IncomingFriendRequest)
+                        {
+                            <button asp-controller="Account" asp-action="AcceptFriendRequest"
+                                    asp-route-returnUrl="@Context.Request.Path"
+                                    class="btn btn-success flex-grow-1 me-2 fixed-size">
+                                Принять заявку в друзья
+                            </button>
+                        }
+                        else if (Model.RelationType is UserRelationTypes.OutgoingFriendRequest)
+                        {
+                            <button asp-controller="Account" asp-action="CancelFriendRequest"
+                                    asp-route-returnUrl="@Context.Request.Path"
+                                    class="btn btn-danger flex-grow-1 me-2 fixed-size">
+                                Отменить заявку в друзья
+                            </button>
+                        }
+
+                        @if (Model.RelationType is UserRelationTypes.Friend)
+                        {
+                            <button asp-controller="WebChat" asp-action="Index"
+                                    class="btn btn-primary flex-grow-1 me-2 fixed-size">
+                                Написать
+                            </button>
+                            <button asp-controller="Account" asp-action="DeleteFriend"
+                                    asp-route-returnUrl="@Context.Request.Path"
+                                    class="btn btn-secondary flex-grow-1 me-2 fixed-size">
+                                Удалить из друзей
+                            </button>
+                        }
+
+                        @if (Model.RelationType is UserRelationTypes.Blacklisted or UserRelationTypes.BlacklistedBothWays)
+                        {
+                            <button asp-controller="Account" asp-action="RemoveFromBlacklist"
+                                    asp-route-returnUrl="@Context.Request.Path"
+                                    class="btn btn-dark flex-grow-1 me-2 fixed-size">
+                                Удалить из черного списка
+                            </button>
+                        }
+                        else
+                        {
+                            <button asp-controller="Account" asp-action="AddToBlacklist"
+                                    asp-route-returnUrl="@Context.Request.Path"
+                                    class="btn btn-dark flex-grow-1 me-2 fixed-size">
+                                Добавить в черный список
+                            </button>
+                        }
+                    </form>
+                </div>
+                <p class="card-text">
+                    <small class="text-body-secondary">
+                        @if (Model.IsOnline)
+                        {
+                            <p class="mb-0"><i class="online-status"></i> Онлайн</p>
+                        }
+                        else if (Model.LastActivityAt is not null)
+                        {
+                            <p class="mb-0">
+                                <i class="offline-status"></i> Был(а) в сети:
+                                <date-humanizer utc-date-time="@Model.LastActivityAt"/>
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="mb-0"><i class="never-online-status"></i> Не был(а) в сети</p>
+                        }
+                    </small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fixed-size {
+        width: 150px;
+        height: 40px;
+    }
+</style>

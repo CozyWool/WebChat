@@ -11,10 +11,10 @@ public class UserEntity
     public string? EmailConfirmationToken { get; set; }
     public string? PasswordRecoveryToken { get; set; }
     public string PasswordHash { get; set; } = null!;
-    public string ProfilePictureFileName { get; set; } = null!;
+    public string? ProfilePictureFileName { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
     public UserStatuses Status { get; set; }
-    public DateTime? LastActivity { get; set; }
+    public DateTime? LastActivityAt { get; set; }
     public virtual RoleEntity Role { get; set; } = null!;
     public virtual ICollection<MessageEntity> Messages { get; set; } = new List<MessageEntity>();
     public virtual ICollection<UserRelationEntity> RelatedUsers { get; set; } = new List<UserRelationEntity>();

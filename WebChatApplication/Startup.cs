@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using WebChatApplication.ActionFilters;
 using WebChatApplication.DataAccess.Contexts;
 using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Extensions;
+using WebChatApplication.Middlewares;
 using WebChatApplication.Services;
 
 namespace WebChatApplication;
@@ -17,9 +17,12 @@ public class Startup(IConfiguration configuration)
         services.AddAutoMapper(typeof(Startup).Assembly);
 
         services.AddDbContext<ApplicationDbContext>(options =>
-        {
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
-        });
+                                                    {
+                                                        options.UseNpgsql(configuration
+                                                                              .GetConnectionString("DefaultConnection"));
+                                                    });
+        
+        services.AddScoped<IUserRelationRepository, UserRelationRepository>();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserService, UserService>();
@@ -31,13 +34,13 @@ public class Startup(IConfiguration configuration)
         services.AddScoped<IS3Service, S3Service>();
 
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(options =>
-            {
-                options.LoginPath = new PathString("/account/login");
-                options.LogoutPath = new PathString("/account/logout");
-                options.AccessDeniedPath = new PathString("/account/access-denied");
-                options.Cookie.HttpOnly = true;
-            });
+                .AddCookie(options =>
+                           {
+                               options.LoginPath = new PathString("/account/login");
+                               options.LogoutPath = new PathString("/account/logout");
+                               options.AccessDeniedPath = new PathString("/account/access-denied");
+                               options.Cookie.HttpOnly = true;
+                           });
 
         services.AddMvc();
     }
@@ -54,13 +57,13 @@ public class Startup(IConfiguration configuration)
 
         app.UseAuthentication();
         app.UseAuthorization();
-        
+
         app.UseMiddleware<LastActivityMiddleware>();
 
         app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapControllerRoute(name: "default",
-                pattern: "{controller=WebChat}/{action=Index}/{id?}");
-        });
+                         {
+                             endpoints.MapControllerRoute("default",
+                                                          "{controller=WebChat}/{action=Index}/{id?}");
+                         });
     }
 }

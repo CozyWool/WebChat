@@ -7,8 +7,11 @@ public static class FluentEmailExtensions
     public static void AddFluentEmail(this IServiceCollection services, IConfiguration configuration)
     {
         var emailConfiguration = configuration.GetSection("EmailConfiguration")
-            .Get<EmailConfiguration>();
-        if (emailConfiguration == null) throw new Exception("EmailConfiguration is null");
+                                              .Get<EmailConfiguration>();
+        if (emailConfiguration is null)
+        {
+            throw new Exception("EmailConfiguration is null");
+        }
 
         var from = emailConfiguration.From;
         var host = emailConfiguration.SmtpServer;
@@ -17,7 +20,7 @@ public static class FluentEmailExtensions
         var password = emailConfiguration.Password;
 
         services.AddFluentEmail(from, "WebChat")
-            .AddSmtpSender(host, port, username, password)
-            .AddRazorRenderer();
+                .AddSmtpSender(host, port, username, password)
+                .AddRazorRenderer();
     }
 }

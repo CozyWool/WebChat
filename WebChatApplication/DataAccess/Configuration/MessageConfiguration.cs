@@ -13,29 +13,29 @@ public class MessageConfiguration : IEntityTypeConfiguration<MessageEntity>
         builder.ToTable("messages");
 
         builder.Property(e => e.Id)
-            .HasColumnName("id");
+               .HasColumnName("id");
         builder.Property(e => e.UserId)
-            .HasColumnName("user_id");
+               .HasColumnName("user_id");
         builder.Property(e => e.ChatId)
-            .HasColumnName("chat_id");
+               .HasColumnName("chat_id");
         builder.Property(e => e.ParentMessageId)
-            .HasColumnName("parent_message_id");
+               .HasColumnName("parent_message_id");
         builder.Property(e => e.SentAt)
-            .HasColumnName("sent_at");
+               .HasColumnName("sent_at");
         builder.Property(e => e.UpdatedAt)
-            .HasColumnName("updated_at");
+               .HasColumnName("updated_at");
         builder.Property(e => e.Content)
-            .HasColumnName("content");
+               .HasColumnName("content");
 
         builder.HasOne(e => e.User)
-            .WithMany(e => e.Messages)
-            .HasForeignKey(e => e.UserId)
-            .OnDelete(DeleteBehavior.ClientSetNull)
-            .IsRequired();
+               .WithMany(e => e.Messages)
+               .HasForeignKey(e => e.UserId)
+               .OnDelete(DeleteBehavior.ClientSetNull)
+               .IsRequired();
 
         builder.HasOne(e => e.ParentMessage)
-            .WithOne()
-            .HasForeignKey<MessageEntity>(e => e.ParentMessageId)
-            .OnDelete(DeleteBehavior.ClientSetNull);
+               .WithOne()
+               .HasForeignKey<MessageEntity>(e => e.ParentMessageId)
+               .OnDelete(DeleteBehavior.ClientSetNull);
     }
 }

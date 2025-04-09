@@ -5,7 +5,7 @@
 
 <partial name="_StatusMessage" for="StatusMessage"/>
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-12">
         <form asp-action="ChangeProfileInfo" asp-controller="Account" method="post" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
             <input type="text" asp-for="OldUsername" hidden>
@@ -22,12 +22,42 @@
                 <input type="text" asp-for="RoleName" class="form-control" readonly/>
                 <label asp-for="RoleName">@Html.DisplayNameFor(m => m.RoleName)</label>
             </div>
-            <div class="input-group mb-2">
-                <label class="input-group-text" asp-for="ProfilePicture">@Html.DisplayNameFor(m => m.ProfilePicture)</label>
+            <div class="input-group mb-1">
+                <label class="input-group-text"
+                       asp-for="ProfilePicture">@Html.DisplayNameFor(m => m.ProfilePicture)</label>
                 <input type="file" class="form-control" accept="image/*" asp-for="ProfilePicture">
                 <span asp-validation-for="ProfilePicture" class="text-danger"></span>
+            </div>
+            <div class="input-group mb-2">
+                <button type="button" class="btn btn-sm btn-danger w-100" onclick="deleteProfilePicture('@Model.Username')">
+                    Удалить фото профиля
+                </button>
             </div>
             <button type="submit" class="w-100 btn btn-lg btn-primary">Сохранить</button>
         </form>
     </div>
 </div>
+
+<script>
+    function deleteProfilePicture(username) {
+        fetch('/account/delete-profile-picture', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: `username=${username}`
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.statusCode === 200) {
+                    alert('Фото профиля успешно удалено');
+                    document.location.reload();
+                } else {
+                    alert(`Произошла ошибки при удалении фото профиля. Код ошибки: ${data.statusCode}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+</script>
