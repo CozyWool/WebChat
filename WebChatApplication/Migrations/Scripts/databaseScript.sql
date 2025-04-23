@@ -338,5 +338,28 @@ BEGIN
     VALUES ('20250417181057_UserLastActivityRename', '9.0.2');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250420230047_PreviousStatusColumn') THEN
+    ALTER TABLE users ADD previous_status integer;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250420230047_PreviousStatusColumn') THEN
+    UPDATE users SET previous_status = NULL
+    WHERE id = 'df6b1476-c214-4103-90d0-6fae25e74bca';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250420230047_PreviousStatusColumn') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250420230047_PreviousStatusColumn', '9.0.2');
+    END IF;
+END $EF$;
 COMMIT;
 

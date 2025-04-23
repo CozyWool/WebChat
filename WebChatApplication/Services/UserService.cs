@@ -27,8 +27,8 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
 
     public UserService(IUserRepository userRepository, IHttpContextAccessor httpContextAccessor,
-                       IEmailService emailService, IS3Service s3Service, IConfiguration configuration,
-                       IUserRelationRepository userRelationRepository, IMapper mapper)
+        IEmailService emailService, IS3Service s3Service, IConfiguration configuration,
+        IUserRelationRepository userRelationRepository, IMapper mapper)
     {
         _userRepository = userRepository;
         _httpContextAccessor = httpContextAccessor;
@@ -46,7 +46,7 @@ public class UserService : IUserService
 
         var user = _userRepository.GetByEmailOrUsername(_httpContextAccessor.HttpContext.User.Identity.Name).Result;
         var rememberMe = _httpContextAccessor.HttpContext
-                                             .User.HasClaim("RememberMe", true.ToString());
+            .User.HasClaim("RememberMe", true.ToString());
         Authenticate(user, rememberMe);
     }
 
@@ -100,14 +100,14 @@ public class UserService : IUserService
         var id = Guid.NewGuid();
         var hash = SecurityHelper.GenerateSaltedHash(model.Password, id.ToString());
         var userEntity = new UserEntity
-                         {
-                             Id = id,
-                             Email = model.Email,
-                             Username = model.Username,
-                             PasswordHash = hash,
-                             CreatedAt = DateTime.UtcNow,
-                             Status = UserStatuses.EmailNotConfirmed
-                         };
+        {
+            Id = id,
+            Email = model.Email,
+            Username = model.Username,
+            PasswordHash = hash,
+            CreatedAt = DateTime.UtcNow,
+            Status = UserStatuses.EmailNotConfirmed
+        };
         await _userRepository.Create(userEntity);
 
         await Authenticate(userEntity, false);
@@ -222,34 +222,35 @@ public class UserService : IUserService
 
         var profileUser = await _userRepository.GetByEmailOrUsername(profileUsername);
         var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
-        if (profileUser is null || currentUser is null)
+        if (profileUser is null)
         {
             return null;
         }
 
-        var relationToUser = currentUser.RelatedUsers
-                                        .FirstOrDefault(x => x.ToUserId == profileUser.Id
-                                                             && x.FromUserId == currentUser.Id)
-                                        ?.RelationType
+        var relationToUser = currentUser?.RelatedUsers
+                                 .FirstOrDefault(x => x.ToUserId == profileUser.Id
+                                                      && x.FromUserId == currentUser.Id)
+                                 ?.RelationType
                              ?? UserRelationTypes.NotRelated;
 
 
         var model = new ProfileInfoModel
-                    {
-                        Username = profileUsername,
-                        RoleName = profileUser.Role.Name switch
-                                   {
-                                       "User"       => "Пользователь",
-                                       "Admin"      => "Администратор",
-                                       "SuperAdmin" => "Супер-Администратор",
-                                       _            => "Не определена"
-                                   },
-                        CreatedAt = profileUser.CreatedAt,
-                        LastActivityAt = profileUser.LastActivityAt,
-                        IsOnline = IsOnline(profileUser.LastActivityAt),
-                        ProfilePictureUrl = await GetProfilePictureUrl(profileUser.Username),
-                        RelationToUser = relationToUser
-                    };
+        {
+            Username = profileUsername,
+            RoleName = profileUser.Role.Name switch
+            {
+                "User" => "Пользователь",
+                "Admin" => "Администратор",
+                "SuperAdmin" => "Супер-Администратор",
+                _ => "Не определена"
+            },
+            CreatedAt = profileUser.CreatedAt,
+            LastActivityAt = profileUser.LastActivityAt,
+            IsOnline = IsOnline(profileUser.LastActivityAt),
+            UserStatus = profileUser.Status,
+            ProfilePictureUrl = await GetProfilePictureUrl(profileUser.Username),
+            RelationToUser = relationToUser
+        };
 
 
         return model;
@@ -278,10 +279,10 @@ public class UserService : IUserService
     {
         var currentUsername = _httpContextAccessor.HttpContext.User.Identity.Name;
         var (users, count) = await _userRepository.GetFriendsPagedSortedFiltered(pageNumber: request.PageNumber,
-                                  pageSize: request.PageSize,
-                                  sortOrder: request.SortOrder,
-                                  username: request.Username,
-                                  currentUsername: currentUsername);
+            pageSize: request.PageSize,
+            sortOrder: request.SortOrder,
+            username: request.Username,
+            currentUsername: currentUsername);
 
 
         var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
@@ -323,8 +324,8 @@ public class UserService : IUserService
         }
 
         var items = query
-                    .Select(x => new UserAndRelationTypeRecord(x.ToUser, x.RelationType))
-                    .ToList();
+            .Select(x => new UserAndRelationTypeRecord(x.ToUser, x.RelationType))
+            .ToList();
 
         var mappedItems = _mapper.Map<List<UserCardModel>>(items);
 
@@ -422,8 +423,8 @@ public class UserService : IUserService
         {
             var fileName = $"{user.Id}_pfp{Path.GetExtension(model.ProfilePicture.FileName)}";
             var profilePictureFileName = await _s3Service.UploadFile(_bucketId,
-                                                                     fileName,
-                                                                     model.ProfilePicture.OpenReadStream());
+                fileName,
+                model.ProfilePicture.OpenReadStream());
             if (!string.IsNullOrEmpty(profilePictureFileName) &&
                 (user.ProfilePictureFileName is null ||
                  await _s3Service.DeleteFile(_bucketId, user.ProfilePictureFileName)))
@@ -514,8 +515,8 @@ public class UserService : IUserService
         }
 
         return SecurityHelper.HashMatch(password, user.Id.ToString(), user.PasswordHash)
-                   ? UserServiceStatusCodes.OK
-                   : UserServiceStatusCodes.NotValid;
+            ? UserServiceStatusCodes.OK
+            : UserServiceStatusCodes.NotValid;
     }
 
     public async Task<UserServiceStatusCodes> DeleteUser(string name)
@@ -553,17 +554,17 @@ public class UserService : IUserService
         }
 
         userRelationFromUser = new UserRelationEntity
-                               {
-                                   FromUserId = userFrom.Id,
-                                   ToUserId = userTo.Id,
-                                   RelationType = UserRelationTypes.OutgoingFriendRequest
-                               };
+        {
+            FromUserId = userFrom.Id,
+            ToUserId = userTo.Id,
+            RelationType = UserRelationTypes.OutgoingFriendRequest
+        };
         userRelationToUser = new UserRelationEntity
-                             {
-                                 FromUserId = userTo.Id,
-                                 ToUserId = userFrom.Id,
-                                 RelationType = UserRelationTypes.IncomingFriendRequest
-                             };
+        {
+            FromUserId = userTo.Id,
+            ToUserId = userFrom.Id,
+            RelationType = UserRelationTypes.IncomingFriendRequest
+        };
 
         await _userRelationRepository.Create(userRelationFromUser);
         await _userRelationRepository.Create(userRelationToUser);
@@ -710,17 +711,17 @@ public class UserService : IUserService
             await _userRelationRepository.Delete(userTo.Id, userFrom.Id);
 
             userRelationFromUser = new UserRelationEntity
-                                   {
-                                       FromUserId = userFrom.Id,
-                                       ToUserId = userTo.Id,
-                                       RelationType = UserRelationTypes.Blacklisted
-                                   };
+            {
+                FromUserId = userFrom.Id,
+                ToUserId = userTo.Id,
+                RelationType = UserRelationTypes.Blacklisted
+            };
             userRelationToUser = new UserRelationEntity
-                                 {
-                                     FromUserId = userTo.Id,
-                                     ToUserId = userFrom.Id,
-                                     RelationType = UserRelationTypes.BlacklistedByUser
-                                 };
+            {
+                FromUserId = userTo.Id,
+                ToUserId = userFrom.Id,
+                RelationType = UserRelationTypes.BlacklistedByUser
+            };
 
             await _userRelationRepository.Create(userRelationFromUser);
             await _userRelationRepository.Create(userRelationToUser);
@@ -761,6 +762,50 @@ public class UserService : IUserService
         return DateTime.UtcNow - userLastActivity <= TimeSpan.FromMinutes(1);
     }
 
+    public async Task<UserServiceStatusCodes> BanUser(string username)
+    {
+        var user = await _userRepository.GetByEmailOrUsername(username);
+
+        if (user is null)
+        {
+            return UserServiceStatusCodes.NotFound;
+        }
+
+        if (user.Status is UserStatuses.Banned)
+        {
+            return UserServiceStatusCodes.AccountBanned;
+        }
+
+        user.PreviousStatus = user.Status;
+        user.Status = UserStatuses.Banned;
+
+        await _userRepository.Update(user);
+
+        return UserServiceStatusCodes.OK;
+    }
+
+    public async Task<UserServiceStatusCodes> UnbanUser(string username)
+    {
+        var user = await _userRepository.GetByEmailOrUsername(username);
+
+        if (user is null)
+        {
+            return UserServiceStatusCodes.NotFound;
+        }
+
+        if (user.Status is not UserStatuses.Banned || user.PreviousStatus is null)
+        {
+            return UserServiceStatusCodes.NotValid;
+        }
+
+        user.Status = user.PreviousStatus.Value;
+        user.PreviousStatus = null;
+
+        await _userRepository.Update(user);
+
+        return UserServiceStatusCodes.OK;
+    }
+
     private async Task Authenticate(UserEntity? user, bool rememberMe)
     {
         if (user is null)
@@ -780,37 +825,37 @@ public class UserService : IUserService
             {
                 existedIdentity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
                 await _httpContextAccessor.HttpContext
-                                          .SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                                                       new ClaimsPrincipal(existedIdentity),
-                                                       new AuthenticationProperties
-                                                       {IsPersistent = rememberMe});
+                    .SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(existedIdentity),
+                        new AuthenticationProperties
+                            {IsPersistent = rememberMe});
                 return;
             }
         }
 
         var claims = new List<Claim>
-                     {
-                         new(ClaimTypes.Name, user.Username),
-                         new(ClaimTypes.Role, user.RoleId.ToString()),
-                         new(ClaimTypes.Email, user.Email),
-                         new("CreatedAt", user.CreatedAt.ToShortDateString()),
-                         new("UserId", user.Id.ToString()),
-                         new("RoleName", user.Role.Name),
-                         new("UserStatus", user.Status.ToString())
-                     };
+        {
+            new(ClaimTypes.Name, user.Username),
+            new(ClaimTypes.Role, user.Role.Name),
+            new(ClaimTypes.Email, user.Email),
+            new("CreatedAt", user.CreatedAt.ToShortDateString()),
+            new("UserId", user.Id.ToString()),
+            new("RoleId", user.RoleId.ToString()),
+            new("UserStatus", user.Status.ToString())
+        };
         if (rememberMe)
         {
             claims.Add(new Claim("RememberMe", rememberMe.ToString()));
         }
 
         var claimsIdentity = new ClaimsIdentity(claims,
-                                                "ApplicationCookie",
-                                                ClaimsIdentity.DefaultNameClaimType,
-                                                ClaimsIdentity.DefaultRoleClaimType);
+            "ApplicationCookie",
+            ClaimsIdentity.DefaultNameClaimType,
+            ClaimsIdentity.DefaultRoleClaimType);
 
         await _httpContextAccessor.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                                                           new ClaimsPrincipal(claimsIdentity),
-                                                           new AuthenticationProperties
-                                                           {IsPersistent = rememberMe});
+            new ClaimsPrincipal(claimsIdentity),
+            new AuthenticationProperties
+                {IsPersistent = rememberMe});
     }
 }

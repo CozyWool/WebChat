@@ -14,6 +14,7 @@ public class UserEntity
     public string? ProfilePictureFileName { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
     public UserStatuses Status { get; set; }
+    public UserStatuses? PreviousStatus { get; set; } = null!;
     public DateTime? LastActivityAt { get; set; }
     public virtual RoleEntity Role { get; set; } = null!;
     public virtual ICollection<MessageEntity> Messages { get; set; } = new List<MessageEntity>();

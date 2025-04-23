@@ -64,13 +64,13 @@
                         <ul class="navbar-nav float-left">
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register"
-                                   asp-route-returnUrl="@Context.Request.Path">
+                                   asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
                                     Зарегистрироваться
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login"
-                                   asp-route-returnUrl="@Context.Request.Path">
+                                   asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
                                     Войти
                                 </a>
                             </li>
