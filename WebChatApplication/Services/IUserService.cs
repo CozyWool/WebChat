@@ -38,4 +38,6 @@ public interface IUserService
     Task<UserServiceStatusCodes> RemoveFromBlacklist(string usernameTo);
     Task<UserServiceStatusCodes> AddToBlacklist(string usernameTo);
     bool IsOnline(DateTime? userLastActivity);
+    Task<UserServiceStatusCodes> BanUser(string username);
+    Task<UserServiceStatusCodes> UnbanUser(string username);
 }

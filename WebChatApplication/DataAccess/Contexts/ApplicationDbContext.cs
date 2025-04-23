@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebChatApplication.DataAccess.Configuration;
+using WebChatApplication.DataAccess.Configurations;
 using WebChatApplication.DataAccess.Entities;
 
 namespace WebChatApplication.DataAccess.Contexts;

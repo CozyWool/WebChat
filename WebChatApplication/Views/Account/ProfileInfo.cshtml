@@ -1,8 +1,8 @@
-﻿@using System.Globalization
-@using WebChatApplication.Enums
+﻿@using WebChatApplication.Enums
 @model WebChatApplication.Models.User.ProfileInfoModel
 
 <h3 class="text-center">Профиль @Model.Username</h3>
+<partial name="_StatusMessage" for="StatusMessage"/>
 <hr class="mb-5"/>
 <div class="row">
     <div class="col-md-3">
@@ -16,7 +16,9 @@
                     }
                     else if (Model.LastActivityAt is not null)
                     {
-                        <p><i class="offline-status"></i> Был(а) в сети: <date-humanizer utc-date-time="@Model.LastActivityAt"/></p>
+                        <p><i class="offline-status"></i> Был(а) в сети:
+                            <date-humanizer utc-date-time="@Model.LastActivityAt"/>
+                        </p>
                     }
                     else
                     {
@@ -25,11 +27,17 @@
                 }
             </div>
         </div>
+        @if (Model.UserStatus is UserStatuses.Banned)
+        {
+            <div class="alert alert-danger" role="alert">
+                Пользователь забанен
+            </div>
+        }
         @if (User.Identity.IsAuthenticated && User.Identity.Name != Model.Username)
         {
             <form method="post">
                 <input asp-for="Username" name="usernameTo" hidden/>
-
+                
                 @if (Model.RelationToUser is UserRelationTypes.NotRelated)
                 {
                     <button asp-controller="Account" asp-action="SendFriendRequest"
@@ -75,18 +83,35 @@
                     <div class="alert alert-danger" role="alert">
                         Вы заблокировали пользователя.
                     </div>
-                    <button asp-controller="Account" asp-action="RemoveFromBlacklist" class="btn btn-dark w-100">
+                    <button asp-controller="Account" asp-action="RemoveFromBlacklist" class="btn btn-dark w-100 mb-2">
                         Удалить из черного списка
                     </button>
                 }
                 else
                 {
-                    <button asp-controller="Account" asp-action="AddToBlacklist" class="btn btn-dark w-100">
+                    <button asp-controller="Account" asp-action="AddToBlacklist" class="btn btn-dark w-100 mb-2">
                         Добавить в черный список
                     </button>
                 }
-
             </form>
+            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+            {
+                <form method="post">
+                    <input asp-for="Username" name="username" hidden/>
+                    @if (Model.UserStatus is UserStatuses.Banned)
+                    {
+                        <button asp-controller="Account" asp-action="UnbanUser" class="btn btn-danger w-100 mb-2">
+                            Разбанить пользователя
+                        </button>
+                    }
+                    else
+                    {
+                        <button asp-controller="Account" asp-action="BanUser" class="btn btn-danger w-100 mb-2">
+                            Забанить пользователя
+                        </button>
+                    }
+                </form>
+            }
         }
     </div>
     <div class="col-md-6">

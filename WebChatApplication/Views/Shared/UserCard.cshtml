@@ -30,7 +30,7 @@
                         @if (Model.RelationType is UserRelationTypes.NotRelated)
                         {
                             <button asp-controller="Account" asp-action="SendFriendRequest"
-                                    asp-route-returnUrl="@Context.Request.Path"
+                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
                                     class="btn btn-success flex-grow-1 me-2 fixed-size">
                                 Добавить в друзья
                             </button>
@@ -38,7 +38,7 @@
                         else if (Model.RelationType is UserRelationTypes.IncomingFriendRequest)
                         {
                             <button asp-controller="Account" asp-action="AcceptFriendRequest"
-                                    asp-route-returnUrl="@Context.Request.Path"
+                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
                                     class="btn btn-success flex-grow-1 me-2 fixed-size">
                                 Принять заявку в друзья
                             </button>
@@ -46,7 +46,7 @@
                         else if (Model.RelationType is UserRelationTypes.OutgoingFriendRequest)
                         {
                             <button asp-controller="Account" asp-action="CancelFriendRequest"
-                                    asp-route-returnUrl="@Context.Request.Path"
+                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
                                     class="btn btn-danger flex-grow-1 me-2 fixed-size">
                                 Отменить заявку в друзья
                             </button>
@@ -59,7 +59,7 @@
                                 Написать
                             </button>
                             <button asp-controller="Account" asp-action="DeleteFriend"
-                                    asp-route-returnUrl="@Context.Request.Path"
+                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
                                     class="btn btn-secondary flex-grow-1 me-2 fixed-size">
                                 Удалить из друзей
                             </button>
@@ -68,7 +68,7 @@
                         @if (Model.RelationType is UserRelationTypes.Blacklisted or UserRelationTypes.BlacklistedBothWays)
                         {
                             <button asp-controller="Account" asp-action="RemoveFromBlacklist"
-                                    asp-route-returnUrl="@Context.Request.Path"
+                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
                                     class="btn btn-dark flex-grow-1 me-2 fixed-size">
                                 Удалить из черного списка
                             </button>
@@ -76,7 +76,7 @@
                         else
                         {
                             <button asp-controller="Account" asp-action="AddToBlacklist"
-                                    asp-route-returnUrl="@Context.Request.Path"
+                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
                                     class="btn btn-dark flex-grow-1 me-2 fixed-size">
                                 Добавить в черный список
                             </button>

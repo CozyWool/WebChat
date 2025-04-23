@@ -4,7 +4,7 @@ using WebChatApplication.DataAccess.Entities;
 using WebChatApplication.Enums;
 using WebChatApplication.Helpers;
 
-namespace WebChatApplication.DataAccess.Configuration;
+namespace WebChatApplication.DataAccess.Configurations;
 
 public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
 {
@@ -41,6 +41,8 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
         builder.Property(e => e.Status)
                .HasDefaultValue(UserStatuses.EmailNotConfirmed)
                .HasColumnName("status");
+        builder.Property(e => e.PreviousStatus)
+               .HasColumnName("previous_status");
         builder.Property(e => e.LastActivityAt)
                .HasColumnName("last_activity_at")
                .IsRequired(false);

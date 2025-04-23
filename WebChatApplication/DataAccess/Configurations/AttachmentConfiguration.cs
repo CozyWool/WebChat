@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WebChatApplication.DataAccess.Entities;
 
-namespace WebChatApplication.DataAccess.Configuration;
+namespace WebChatApplication.DataAccess.Configurations;
 
 public class AttachmentConfiguration : IEntityTypeConfiguration<AttachmentEntity>
 {
