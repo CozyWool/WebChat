@@ -17,6 +17,8 @@ public class ProfileInfoModel
     public DateTime? LastActivityAt { get; set; }
 
     public bool IsOnline { get; set; }
+    public UserStatuses UserStatus { get; set; }
     public string ProfilePictureUrl { get; set; }
     public UserRelationTypes RelationToUser { get; set; }
+    public StatusMessageModel StatusMessage { get; set; } = new();
 }
