@@ -1,5 +1,6 @@
 ﻿using WebChatApplication.Enums;
 using WebChatApplication.Messages;
+using WebChatApplication.Models;
 using WebChatApplication.Models.User;
 using WebChatApplication.Models.User.Email;
 using WebChatApplication.Models.User.Manage;
@@ -26,8 +27,17 @@ public interface IUserService
     Task<ProfileInfoModel?> GetUserProfile(string profileUsername);
     Task<string> GetProfilePictureUrl(string username);
     Task<bool> DeleteProfilePicture(string username);
-    Task<(List<UserCardModel> items, int count)> GetFindFriendsPagedSortedFiltered(FindFriendsRequest request);
+    Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFiltered(FindUsersRequest request);
+
+    Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFilteredByMultipleRoles(
+        List<int> roles, FindUsersRequest request);
+
+    Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFilteredByMultipleRelationTypes(
+        List<UserRelationTypes> relationTypes, FindUsersRequest request);
+
+/*
     Task<List<UserCardModel>> GetUserCards(string username, UserRelationTypes? relationType = null);
+*/
     Task<UserServiceStatusCodes> UpdateLastActivity(string username);
 
     //TODO: Подумать, переносить ли все методы ниже в отдельный сервис IUserRelationService
@@ -40,4 +50,6 @@ public interface IUserService
     bool IsOnline(DateTime? userLastActivity);
     Task<UserServiceStatusCodes> BanUser(string username);
     Task<UserServiceStatusCodes> UnbanUser(string username);
+    Task<UserServiceStatusCodes> PromoteUser(string username);
+    Task<UserServiceStatusCodes> DemoteUser(string username);
 }

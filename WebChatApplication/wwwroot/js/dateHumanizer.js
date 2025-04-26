@@ -16,7 +16,7 @@ function formatLastSeen(utcDateString) {
     const diffMins = Math.floor(diffMs / 60000);
 
     if (diffMins < 1) return "только что";
-    if (diffMins < 60) return `${diffMins} ${plural(diffMins, 'минута', 'минуты', 'минут')} назад`;
+    if (diffMins < 60) return `${diffMins} ${plural(diffMins, 'минуту', 'минуты', 'минут')} назад`;
 
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours} ${plural(diffHours, 'час', 'часа', 'часов')} назад`;

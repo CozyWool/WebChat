@@ -50,48 +50,163 @@ public class UserRepository : IUserRepository
                    .FirstOrDefaultAsync(x => x.Username == username || x.Email == email);
     }
 
-    public async Task<(List<UserEntity> items, int count)> GetFriendsPagedSortedFiltered(
-        int pageNumber, int pageSize, FriendSortState sortOrder, string? username, string? currentUsername)
+    public async Task<(List<UserEntity> items, int count)> GetUsersPagedSortedFiltered(int pageNumber,
+        int pageSize,
+        UserSortState sortOrder,
+        string? username,
+        UserRelationTypes? relationType,
+        int? role,
+        string? currentUsername)
     {
         //фильтрация
-        var users = GetUsersQueryable().AsQueryable();
+        var usersQuery = GetUsersQueryable().AsQueryable();
 
-        if (!string.IsNullOrEmpty(username))
-        {
-            users = users.Where(x =>
-                                    x.Username
-                                     .ToLower()
-                                     .Trim()
-                                     .Contains(
-                                               username
-                                                   .ToLower()
-                                                   .Trim()));
-        }
+        usersQuery = FilterUsersByUsername(username, usersQuery);
 
         if (!string.IsNullOrEmpty(currentUsername))
         {
-            users = users.Where(x => x.Username != currentUsername);
+            usersQuery = usersQuery.Where(x => x.Username != currentUsername);
+
+            if (relationType is not null)
+            {
+                var currentUser = await GetByEmailOrUsername(currentUsername);
+                if (currentUser is not null)
+                {
+                    if (relationType is UserRelationTypes.NotRelated)
+                    {
+                        var relatedUsers = currentUser
+                                           .RelatedUsers
+                                           .Select(relation => relation.ToUser)
+                                           .ToList();
+                        usersQuery = usersQuery.Where(x => !relatedUsers.Contains(x));
+                    }
+                    else
+                    {
+                        var relatedUsers = currentUser
+                                           .RelatedUsers
+                                           .Where(x => x.RelationType == relationType)
+                                           .Select(relation => relation.ToUser)
+                                           .ToList();
+                        usersQuery = usersQuery.Where(x => relatedUsers.Contains(x));
+                    }
+                }
+            }
         }
 
-        // сортировка
-        users = sortOrder switch
-                {
-                    FriendSortState.UsernameAsc      => users.OrderBy(e => e.Username),
-                    FriendSortState.UsernameDesc     => users.OrderByDescending(e => e.Username),
-                    FriendSortState.LastActivityAsc  => users.OrderBy(e => e.LastActivityAt),
-                    FriendSortState.LastActivityDesc => users.OrderByDescending(e => e.LastActivityAt),
-                };
+        if (role is not null)
+        {
+            usersQuery = usersQuery.Where(x => x.Role.Id == role);
+        }
 
 
-        // пагинация
-        var count = await users.CountAsync();
+        usersQuery = SortUsers(sortOrder, usersQuery);
 
-        var items = await users
-                          .Skip((pageNumber - 1) * pageSize)
-                          .Take(pageSize)
-                          .ToListAsync();
+        (usersQuery, var count) = await PaginateUsers(pageNumber, pageSize, usersQuery);
+        var items = await usersQuery.ToListAsync();
+
         return (items, count);
     }
+
+    private static IQueryable<UserEntity> FilterUsersByUsername(string? username, IQueryable<UserEntity> usersQuery)
+    {
+        if (!string.IsNullOrEmpty(username))
+        {
+            usersQuery = usersQuery.Where(x =>
+                                              x.Username
+                                               .ToLower()
+                                               .Trim()
+                                               .Contains(
+                                                         username
+                                                             .ToLower()
+                                                             .Trim()));
+        }
+
+        return usersQuery;
+    }
+
+    private static IQueryable<UserEntity> SortUsers(UserSortState sortOrder, IQueryable<UserEntity> usersQuery)
+    {
+        usersQuery = sortOrder switch
+                     {
+                         UserSortState.UsernameAsc      => usersQuery.OrderBy(e => e.Username),
+                         UserSortState.UsernameDesc     => usersQuery.OrderByDescending(e => e.Username),
+                         UserSortState.LastActivityAsc  => usersQuery.OrderBy(e => e.LastActivityAt),
+                         UserSortState.LastActivityDesc => usersQuery.OrderByDescending(e => e.LastActivityAt),
+                     };
+        return usersQuery;
+    }
+
+    private async Task<(IQueryable<UserEntity> items, int count)> PaginateUsers(
+        int pageNumber, int pageSize, IQueryable<UserEntity> usersQuery)
+    {
+        var count = await usersQuery.CountAsync();
+
+        usersQuery = usersQuery
+                     .Skip((pageNumber - 1) * pageSize)
+                     .Take(pageSize);
+        return (usersQuery, count);
+    }
+
+    public async Task<(List<UserEntity> items, int count)> GetUsersPagedSortedFilteredByMultipleRelationTypes(
+        int pageNumber,
+        int pageSize,
+        List<UserRelationTypes> relationTypes,
+        string? currentUsername,
+        string? username,
+        UserSortState sortOrder)
+    {
+        var usersQuery = GetUsersQueryable().AsQueryable();
+
+        usersQuery = FilterUsersByUsername(username, usersQuery);
+        if (!string.IsNullOrEmpty(currentUsername))
+        {
+            usersQuery = usersQuery.Where(x => x.Username != currentUsername);
+
+            var currentUser = await GetByEmailOrUsername(currentUsername);
+            if (currentUser is not null && relationTypes.Count > 0)
+            {
+                var relatedUsers = currentUser
+                                   .RelatedUsers
+                                   .Where(x => relationTypes.Contains(x.RelationType))
+                                   .Select(relation => relation.ToUser)
+                                   .ToList();
+                usersQuery = usersQuery.Where(x => relatedUsers.Contains(x));
+            }
+        }
+
+        usersQuery = SortUsers(sortOrder, usersQuery);
+
+        (usersQuery, var count) = await PaginateUsers(pageNumber, pageSize, usersQuery);
+
+        var items = await usersQuery.ToListAsync();
+        return (items, count);
+    }
+
+    public async Task<(List<UserEntity> items, int count)> GetUsersPagedSortedFilteredByMultipleRoles(
+        int pageNumber,
+        int pageSize,
+        List<int> roles,
+        string? currentUsername,
+        string? username,
+        UserSortState sortOrder)
+    {
+        var usersQuery = GetUsersQueryable().AsQueryable();
+
+        usersQuery = FilterUsersByUsername(username, usersQuery);
+
+        if (roles.Count > 0)
+        {
+            usersQuery = usersQuery.Where(x => roles.Contains(x.Role.Id));
+        }
+
+        usersQuery = SortUsers(sortOrder, usersQuery);
+
+        (usersQuery, var count) = await PaginateUsers(pageNumber, pageSize, usersQuery);
+
+        var items = await usersQuery.ToListAsync();
+        return (items, count);
+    }
+
 
     public async Task Create(UserEntity? entity)
     {

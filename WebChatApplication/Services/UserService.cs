@@ -8,6 +8,7 @@ using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Enums;
 using WebChatApplication.Helpers;
 using WebChatApplication.Messages;
+using WebChatApplication.Models;
 using WebChatApplication.Models.User;
 using WebChatApplication.Models.User.Email;
 using WebChatApplication.Models.User.Manage;
@@ -22,13 +23,19 @@ public class UserService : IUserService
     private readonly IEmailService _emailService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IS3Service _s3Service;
+    private readonly IRoleService _roleService;
     private readonly IUserRepository _userRepository;
     private readonly IUserRelationRepository _userRelationRepository;
     private readonly IMapper _mapper;
 
-    public UserService(IUserRepository userRepository, IHttpContextAccessor httpContextAccessor,
-        IEmailService emailService, IS3Service s3Service, IConfiguration configuration,
-        IUserRelationRepository userRelationRepository, IMapper mapper)
+    public UserService(IUserRepository userRepository,
+                       IHttpContextAccessor httpContextAccessor,
+                       IEmailService emailService,
+                       IS3Service s3Service,
+                       IConfiguration configuration,
+                       IUserRelationRepository userRelationRepository,
+                       IMapper mapper,
+                       IRoleService roleService)
     {
         _userRepository = userRepository;
         _httpContextAccessor = httpContextAccessor;
@@ -37,6 +44,7 @@ public class UserService : IUserService
         _configuration = configuration;
         _userRelationRepository = userRelationRepository;
         _mapper = mapper;
+        _roleService = roleService;
         _bucketId = _configuration.GetSection("MinioConfiguration").Get<MinioConfiguration>().BucketId;
 
         if (!_httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
@@ -46,7 +54,7 @@ public class UserService : IUserService
 
         var user = _userRepository.GetByEmailOrUsername(_httpContextAccessor.HttpContext.User.Identity.Name).Result;
         var rememberMe = _httpContextAccessor.HttpContext
-            .User.HasClaim("RememberMe", true.ToString());
+                                             .User.HasClaim("RememberMe", true.ToString());
         Authenticate(user, rememberMe);
     }
 
@@ -100,14 +108,14 @@ public class UserService : IUserService
         var id = Guid.NewGuid();
         var hash = SecurityHelper.GenerateSaltedHash(model.Password, id.ToString());
         var userEntity = new UserEntity
-        {
-            Id = id,
-            Email = model.Email,
-            Username = model.Username,
-            PasswordHash = hash,
-            CreatedAt = DateTime.UtcNow,
-            Status = UserStatuses.EmailNotConfirmed
-        };
+                         {
+                             Id = id,
+                             Email = model.Email,
+                             Username = model.Username,
+                             PasswordHash = hash,
+                             CreatedAt = DateTime.UtcNow,
+                             Status = UserStatuses.EmailNotConfirmed
+                         };
         await _userRepository.Create(userEntity);
 
         await Authenticate(userEntity, false);
@@ -228,29 +236,29 @@ public class UserService : IUserService
         }
 
         var relationToUser = currentUser?.RelatedUsers
-                                 .FirstOrDefault(x => x.ToUserId == profileUser.Id
-                                                      && x.FromUserId == currentUser.Id)
-                                 ?.RelationType
+                                        .FirstOrDefault(x => x.ToUserId == profileUser.Id
+                                                             && x.FromUserId == currentUser.Id)
+                                        ?.RelationType
                              ?? UserRelationTypes.NotRelated;
 
 
         var model = new ProfileInfoModel
-        {
-            Username = profileUsername,
-            RoleName = profileUser.Role.Name switch
-            {
-                "User" => "Пользователь",
-                "Admin" => "Администратор",
-                "SuperAdmin" => "Супер-Администратор",
-                _ => "Не определена"
-            },
-            CreatedAt = profileUser.CreatedAt,
-            LastActivityAt = profileUser.LastActivityAt,
-            IsOnline = IsOnline(profileUser.LastActivityAt),
-            UserStatus = profileUser.Status,
-            ProfilePictureUrl = await GetProfilePictureUrl(profileUser.Username),
-            RelationToUser = relationToUser
-        };
+                    {
+                        Username = profileUsername,
+                        RoleName = profileUser.Role.Name switch
+                                   {
+                                       "User"       => "Пользователь",
+                                       "Admin"      => "Администратор",
+                                       "SuperAdmin" => "Супер-Администратор",
+                                       _            => "Не определена"
+                                   },
+                        CreatedAt = profileUser.CreatedAt,
+                        LastActivityAt = profileUser.LastActivityAt,
+                        IsOnline = IsOnline(profileUser.LastActivityAt),
+                        UserStatus = profileUser.Status,
+                        ProfilePictureUrl = await GetProfilePictureUrl(profileUser.Username),
+                        RelationToUser = relationToUser
+                    };
 
 
         return model;
@@ -274,63 +282,118 @@ public class UserService : IUserService
         return true;
     }
 
-    public async Task<(List<UserCardModel> items, int count)> GetFindFriendsPagedSortedFiltered(
-        FindFriendsRequest request)
+    public async Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFiltered(
+        FindUsersRequest request)
     {
         var currentUsername = _httpContextAccessor.HttpContext.User.Identity.Name;
-        var (users, count) = await _userRepository.GetFriendsPagedSortedFiltered(pageNumber: request.PageNumber,
-            pageSize: request.PageSize,
-            sortOrder: request.SortOrder,
-            username: request.Username,
-            currentUsername: currentUsername);
+        var (users, count) = await _userRepository.GetUsersPagedSortedFiltered(pageNumber: request.PageNumber,
+                                                                               pageSize: request.PageSize,
+                                                                               sortOrder: request.SortOrder,
+                                                                               username: request.Username,
+                                                                               relationType: request.RelationType,
+                                                                               role: request.Role,
+                                                                               currentUsername: currentUsername);
 
 
         var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
-        if (currentUser is null)
-        {
-            return ([], 0);
-        }
 
-        var items = new List<UserAndRelationTypeRecord>();
-        foreach (var user in users)
-        {
-            var item = new UserAndRelationTypeRecord(user, UserRelationTypes.NotRelated);
-            var relatedUser = currentUser.RelatedUsers.FirstOrDefault(x => x.ToUser.Username == user.Username);
-            if (relatedUser is not null)
-            {
-                item.RelationType = relatedUser.RelationType;
-            }
-
-            items.Add(item);
-        }
+        var items = FillUserAndRelationTypeRecordsList(users, currentUser);
 
         var mappedItems = _mapper.Map<List<UserCardModel>>(items);
 
         return (mappedItems, count);
     }
 
-    public async Task<List<UserCardModel>> GetUserCards(string username, UserRelationTypes? relationType = null)
+    public async Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFilteredByMultipleRoles(
+        List<int> roles, FindUsersRequest request)
     {
-        var currentUser = await _userRepository.GetByEmailOrUsername(username);
-        if (currentUser is null)
-        {
-            return [];
-        }
+        var currentUsername = _httpContextAccessor.HttpContext.User.Identity.Name;
+        var (users, count) = await _userRepository.GetUsersPagedSortedFilteredByMultipleRoles(
+                                  request.PageNumber,
+                                  request.PageSize,
+                                  roles,
+                                  currentUsername,
+                                  request.Username,
+                                  request.SortOrder);
 
-        var query = currentUser.RelatedUsers.AsQueryable();
-        if (relationType is not null)
-        {
-            query = query.Where(x => x.RelationType == relationType);
-        }
 
-        var items = query
-            .Select(x => new UserAndRelationTypeRecord(x.ToUser, x.RelationType))
-            .ToList();
+        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+
+        var items = FillUserAndRelationTypeRecordsList(users, currentUser);
 
         var mappedItems = _mapper.Map<List<UserCardModel>>(items);
 
-        return mappedItems;
+        return (mappedItems, count);
     }
+
+    private static List<UserAndRelationTypeRecord> FillUserAndRelationTypeRecordsList(
+        List<UserEntity> users, UserEntity? currentUser)
+    {
+        var items = new List<UserAndRelationTypeRecord>();
+        foreach (var user in users)
+        {
+            var item = new UserAndRelationTypeRecord(user, UserRelationTypes.NotRelated);
+            if (currentUser is not null)
+            {
+                var relatedUser = currentUser.RelatedUsers.FirstOrDefault(x => x.ToUser.Username == user.Username);
+                if (relatedUser is not null)
+                {
+                    item.RelationType = relatedUser.RelationType;
+                }
+            }
+
+            items.Add(item);
+        }
+
+        return items;
+    }
+
+    public async Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFilteredByMultipleRelationTypes(
+        List<UserRelationTypes> relationTypes, FindUsersRequest request)
+    {
+        var currentUsername = _httpContextAccessor.HttpContext.User.Identity.Name;
+        var (users, count) =
+            await _userRepository.GetUsersPagedSortedFilteredByMultipleRelationTypes(
+                 request.PageNumber,
+                 request.PageSize,
+                 relationTypes,
+                 currentUsername,
+                 request.Username,
+                 request.SortOrder);
+
+
+        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+
+        var items = FillUserAndRelationTypeRecordsList(users, currentUser);
+
+
+        var mappedItems = _mapper.Map<List<UserCardModel>>(items);
+
+        return (mappedItems, count);
+    }
+
+    // public async Task<List<UserCardModel>> GetUserCards(string username, UserRelationTypes? relationType = null)
+    // {
+    //     var currentUser = await _userRepository.GetByEmailOrUsername(username);
+    //     if (currentUser is null)
+    //     {
+    //         return [];
+    //     }
+    //
+    //     var query = currentUser.RelatedUsers.AsQueryable();
+    //     if (relationType is not null)
+    //     {
+    //         query = query.Where(x => x.RelationType == relationType);
+    //     }
+    //
+    //     var items = query
+    //                 .Select(x => new UserAndRelationTypeRecord(x.ToUser, x.RelationType))
+    //                 .ToList();
+    //
+    //     var mappedItems = _mapper.Map<List<UserCardModel>>(items);
+    //
+    //     return mappedItems;
+    // }
 
 
     public async Task<string> GetProfilePictureUrl(string username)
@@ -423,8 +486,8 @@ public class UserService : IUserService
         {
             var fileName = $"{user.Id}_pfp{Path.GetExtension(model.ProfilePicture.FileName)}";
             var profilePictureFileName = await _s3Service.UploadFile(_bucketId,
-                fileName,
-                model.ProfilePicture.OpenReadStream());
+                                                                     fileName,
+                                                                     model.ProfilePicture.OpenReadStream());
             if (!string.IsNullOrEmpty(profilePictureFileName) &&
                 (user.ProfilePictureFileName is null ||
                  await _s3Service.DeleteFile(_bucketId, user.ProfilePictureFileName)))
@@ -515,8 +578,8 @@ public class UserService : IUserService
         }
 
         return SecurityHelper.HashMatch(password, user.Id.ToString(), user.PasswordHash)
-            ? UserServiceStatusCodes.OK
-            : UserServiceStatusCodes.NotValid;
+                   ? UserServiceStatusCodes.OK
+                   : UserServiceStatusCodes.NotValid;
     }
 
     public async Task<UserServiceStatusCodes> DeleteUser(string name)
@@ -554,17 +617,17 @@ public class UserService : IUserService
         }
 
         userRelationFromUser = new UserRelationEntity
-        {
-            FromUserId = userFrom.Id,
-            ToUserId = userTo.Id,
-            RelationType = UserRelationTypes.OutgoingFriendRequest
-        };
+                               {
+                                   FromUserId = userFrom.Id,
+                                   ToUserId = userTo.Id,
+                                   RelationType = UserRelationTypes.OutgoingFriendRequest
+                               };
         userRelationToUser = new UserRelationEntity
-        {
-            FromUserId = userTo.Id,
-            ToUserId = userFrom.Id,
-            RelationType = UserRelationTypes.IncomingFriendRequest
-        };
+                             {
+                                 FromUserId = userTo.Id,
+                                 ToUserId = userFrom.Id,
+                                 RelationType = UserRelationTypes.IncomingFriendRequest
+                             };
 
         await _userRelationRepository.Create(userRelationFromUser);
         await _userRelationRepository.Create(userRelationToUser);
@@ -711,17 +774,17 @@ public class UserService : IUserService
             await _userRelationRepository.Delete(userTo.Id, userFrom.Id);
 
             userRelationFromUser = new UserRelationEntity
-            {
-                FromUserId = userFrom.Id,
-                ToUserId = userTo.Id,
-                RelationType = UserRelationTypes.Blacklisted
-            };
+                                   {
+                                       FromUserId = userFrom.Id,
+                                       ToUserId = userTo.Id,
+                                       RelationType = UserRelationTypes.Blacklisted
+                                   };
             userRelationToUser = new UserRelationEntity
-            {
-                FromUserId = userTo.Id,
-                ToUserId = userFrom.Id,
-                RelationType = UserRelationTypes.BlacklistedByUser
-            };
+                                 {
+                                     FromUserId = userTo.Id,
+                                     ToUserId = userFrom.Id,
+                                     RelationType = UserRelationTypes.BlacklistedByUser
+                                 };
 
             await _userRelationRepository.Create(userRelationFromUser);
             await _userRelationRepository.Create(userRelationToUser);
@@ -765,10 +828,24 @@ public class UserService : IUserService
     public async Task<UserServiceStatusCodes> BanUser(string username)
     {
         var user = await _userRepository.GetByEmailOrUsername(username);
+        var currentUsername = _httpContextAccessor.HttpContext?.User.Identity?.Name;
+        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+
+        if (currentUser is null)
+        {
+            return UserServiceStatusCodes.NotValid;
+        }
 
         if (user is null)
         {
             return UserServiceStatusCodes.NotFound;
+        }
+
+        if (user.Role.Name == "SuperAdmin" ||
+            (user.Role.Name == "Admin" && currentUser.Role.Name != "SuperAdmin") ||
+            (currentUser.Role.Name != "Admin" && currentUser.Role.Name != "SuperAdmin"))
+        {
+            return UserServiceStatusCodes.NotValid;
         }
 
         if (user.Status is UserStatuses.Banned)
@@ -787,19 +864,91 @@ public class UserService : IUserService
     public async Task<UserServiceStatusCodes> UnbanUser(string username)
     {
         var user = await _userRepository.GetByEmailOrUsername(username);
+        var currentUsername = _httpContextAccessor.HttpContext?.User.Identity?.Name;
+        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+
+        if (currentUser is null)
+        {
+            return UserServiceStatusCodes.NotValid;
+        }
 
         if (user is null)
         {
             return UserServiceStatusCodes.NotFound;
         }
 
-        if (user.Status is not UserStatuses.Banned || user.PreviousStatus is null)
+        if (user.Status is not UserStatuses.Banned ||
+            (user.Role.Name == "Admin" && currentUser.Role.Name != "SuperAdmin") ||
+            user.PreviousStatus is null)
         {
             return UserServiceStatusCodes.NotValid;
         }
 
         user.Status = user.PreviousStatus.Value;
         user.PreviousStatus = null;
+
+        await _userRepository.Update(user);
+
+        return UserServiceStatusCodes.OK;
+    }
+
+    public async Task<UserServiceStatusCodes> PromoteUser(string username)
+    {
+        var user = await _userRepository.GetByEmailOrUsername(username);
+        var currentUsername = _httpContextAccessor.HttpContext?.User.Identity?.Name;
+        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+        var adminRole = await _roleService.GetByName("Admin");
+
+
+        if (currentUser is null)
+        {
+            return UserServiceStatusCodes.NotValid;
+        }
+
+        if (user is null || adminRole is null)
+        {
+            return UserServiceStatusCodes.NotFound;
+        }
+
+        if (user.Role.Name == "SuperAdmin" ||
+            (user.Role.Name == "Admin" && currentUser.Role.Name != "SuperAdmin") ||
+            (currentUser.Role.Name != "Admin" && currentUser.Role.Name != "SuperAdmin"))
+        {
+            return UserServiceStatusCodes.NotValid;
+        }
+        
+        user.RoleId = adminRole.Id;
+
+        await _userRepository.Update(user);
+
+        return UserServiceStatusCodes.OK;
+    }
+
+    public async Task<UserServiceStatusCodes> DemoteUser(string username)
+    {
+        var user = await _userRepository.GetByEmailOrUsername(username);
+        var currentUsername = _httpContextAccessor.HttpContext?.User.Identity?.Name;
+        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+        var userRole = await _roleService.GetByName("User");
+
+        if (currentUser is null)
+        {
+            return UserServiceStatusCodes.NotValid;
+        }
+
+        if (user is null || userRole is null)
+        {
+            return UserServiceStatusCodes.NotFound;
+        }
+
+        if (user.Role.Name == "SuperAdmin" ||
+            (user.Role.Name == "Admin" && currentUser.Role.Name != "SuperAdmin") ||
+            (currentUser.Role.Name != "Admin" && currentUser.Role.Name != "SuperAdmin"))
+        {
+            return UserServiceStatusCodes.NotValid;
+        }
+        
+        user.RoleId = userRole.Id;
 
         await _userRepository.Update(user);
 
@@ -825,37 +974,37 @@ public class UserService : IUserService
             {
                 existedIdentity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
                 await _httpContextAccessor.HttpContext
-                    .SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-                        new ClaimsPrincipal(existedIdentity),
-                        new AuthenticationProperties
-                            {IsPersistent = rememberMe});
+                                          .SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                                                       new ClaimsPrincipal(existedIdentity),
+                                                       new AuthenticationProperties
+                                                       {IsPersistent = rememberMe});
                 return;
             }
         }
 
         var claims = new List<Claim>
-        {
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, user.Role.Name),
-            new(ClaimTypes.Email, user.Email),
-            new("CreatedAt", user.CreatedAt.ToShortDateString()),
-            new("UserId", user.Id.ToString()),
-            new("RoleId", user.RoleId.ToString()),
-            new("UserStatus", user.Status.ToString())
-        };
+                     {
+                         new(ClaimTypes.Name, user.Username),
+                         new(ClaimTypes.Role, user.Role.Name),
+                         new(ClaimTypes.Email, user.Email),
+                         new("CreatedAt", user.CreatedAt.ToShortDateString()),
+                         new("UserId", user.Id.ToString()),
+                         new("RoleId", user.RoleId.ToString()),
+                         new("UserStatus", user.Status.ToString())
+                     };
         if (rememberMe)
         {
             claims.Add(new Claim("RememberMe", rememberMe.ToString()));
         }
 
         var claimsIdentity = new ClaimsIdentity(claims,
-            "ApplicationCookie",
-            ClaimsIdentity.DefaultNameClaimType,
-            ClaimsIdentity.DefaultRoleClaimType);
+                                                "ApplicationCookie",
+                                                ClaimsIdentity.DefaultNameClaimType,
+                                                ClaimsIdentity.DefaultRoleClaimType);
 
         await _httpContextAccessor.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(claimsIdentity),
-            new AuthenticationProperties
-                {IsPersistent = rememberMe});
+                                                           new ClaimsPrincipal(claimsIdentity),
+                                                           new AuthenticationProperties
+                                                           {IsPersistent = rememberMe});
     }
 }

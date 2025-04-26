@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebChatApplication.Models.User.FilterSortPagingFriends;
+namespace WebChatApplication.Models.User.FilterSortPaging;
 
-public class FriendPageViewModel(int count, int pageNumber, int pageSize)
+public class UserPageViewModel(int count, int pageNumber, int pageSize)
 {
     [Display(Name = "Страница")] public int PageNumber { get; } = pageNumber;
     public int TotalPages { get; } = (int) Math.Ceiling(count / (double) pageSize);

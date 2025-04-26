@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WebChatApplication.Enums;
 
-public enum FriendSortState
+public enum UserSortState
 {
     [Display(Name = "Имя пользователя ↑")]
     UsernameAsc,
