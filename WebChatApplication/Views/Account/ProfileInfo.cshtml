@@ -30,14 +30,14 @@
         @if (Model.UserStatus is UserStatuses.Banned)
         {
             <div class="alert alert-danger" role="alert">
-                Пользователь забанен
+                Пользователь заблокирован
             </div>
         }
-        @if (User.Identity.IsAuthenticated && User.Identity.Name != Model.Username)
+        @if (User.Identity is {IsAuthenticated: true} && User.Identity.Name != Model.Username)
         {
             <form method="post">
-                <input asp-for="Username" name="usernameTo" hidden/>
-                
+                <input value="@Model.Username" name="usernameTo" hidden/>
+
                 @if (Model.RelationToUser is UserRelationTypes.NotRelated)
                 {
                     <button asp-controller="Account" asp-action="SendFriendRequest"
@@ -73,7 +73,7 @@
                 @if (Model.RelationToUser is UserRelationTypes.BlacklistedByUser or UserRelationTypes.BlacklistedBothWays)
                 {
                     <div class="alert alert-danger" role="alert">
-                        Пользователь заблокировал вас.
+                        Пользователь добавил в черный список вас.
                     </div>
                 }
 
@@ -81,7 +81,7 @@
                 @if (Model.RelationToUser is UserRelationTypes.Blacklisted or UserRelationTypes.BlacklistedBothWays)
                 {
                     <div class="alert alert-danger" role="alert">
-                        Вы заблокировали пользователя.
+                        Вы добавили в черный список пользователя.
                     </div>
                     <button asp-controller="Account" asp-action="RemoveFromBlacklist" class="btn btn-dark w-100 mb-2">
                         Удалить из черного списка
@@ -101,13 +101,26 @@
                     @if (Model.UserStatus is UserStatuses.Banned)
                     {
                         <button asp-controller="Account" asp-action="UnbanUser" class="btn btn-danger w-100 mb-2">
-                            Разбанить пользователя
+                            Разблокировать пользователя
                         </button>
                     }
                     else
                     {
                         <button asp-controller="Account" asp-action="BanUser" class="btn btn-danger w-100 mb-2">
-                            Забанить пользователя
+                            Заблокировать пользователя
+                        </button>
+                    }
+
+                    @if (Model.RoleName == "Администратор")
+                    {
+                        <button asp-controller="Account" asp-action="DemoteUser" class="btn btn-warning w-100 mb-2">
+                            Понизить до пользователя
+                        </button>
+                    }
+                    else if (Model.RoleName == "Пользователь")
+                    {
+                        <button asp-controller="Account" asp-action="PromoteUser" class="btn btn-warning w-100 mb-2">
+                            Повысить до администратора
                         </button>
                     }
                 </form>
@@ -144,7 +157,7 @@
             <label asp-for="RoleName">@Html.DisplayNameFor(m => m.RoleName)</label>
         </div>
         @{
-            if (User.Identity.IsAuthenticated && User.Identity.Name == Model.Username)
+            if (User.Identity is {IsAuthenticated: true} && User.Identity.Name == Model.Username)
             {
                 <a class="btn btn-primary btn-lg w-100 mb-2 mt-2" asp-controller="Account"
                    asp-action="ChangeProfileInfo">

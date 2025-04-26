@@ -1,0 +1,60 @@
+﻿@using WebChatApplication.Enums
+@model WebChatApplication.Models.User.FilterSortPaging.FindUsersViewModel
+
+
+@if (Model.FilterViewModel.IsNeedToFilterRelationTypes)
+{
+    var relationTypes = Html
+                        .GetEnumSelectList<UserRelationTypes>()
+                        .Where(x =>
+                                   Enum.Parse<UserRelationTypes>(x.Value) != UserRelationTypes.BlacklistedBothWays &&
+                                   Enum.Parse<UserRelationTypes>(x.Value) != UserRelationTypes.BlacklistedByUser)
+                        .ToList();
+    Model.FilterViewModel.RelationTypes = relationTypes;
+}
+
+
+<form method="get" class="form-inline">
+    <div class="form-floating mb-2">
+        <input name="username" asp-for="@Model.FilterViewModel.SelectedUsername" class="form-control"/>
+        <label>@Html.DisplayNameFor(m => m.FilterViewModel.SelectedUsername)</label>
+    </div>
+    @if (User.Identity is {IsAuthenticated: true} && Model.FilterViewModel.IsNeedToFilterRelationTypes)
+    {
+        <div class="form-floating mb-2">
+            <select name="relationType" asp-items="@Model.FilterViewModel.RelationTypes"
+                    asp-for="FilterViewModel.SelectedRelationType"
+                    class="form-select">
+                <option value="-1">Любые</option>
+            </select>
+            <label>@Html.DisplayNameFor(m => m.FilterViewModel.SelectedRelationType)</label>
+        </div>
+    }
+    @if (Model.FilterViewModel.IsNeedToFilterRoles)
+    {
+        <div class="form-floating mb-2">
+            <select name="role" asp-items="@Model.FilterViewModel.Roles"
+                    asp-for="FilterViewModel.SelectedRole"
+                    class="form-select">
+                <option value="">Любая</option>
+            </select>
+            <label>@Html.DisplayNameFor(m => m.FilterViewModel.SelectedRole)</label>
+        </div>
+    }
+
+    <div class="form-floating mb-2">
+        <select name="sortOrder" asp-items="Html.GetEnumSelectList<UserSortState>()" asp-for="SortViewModel.Current"
+                class="form-select">
+        </select>
+        <label>@Html.DisplayNameFor(m => m.SortViewModel.Current)</label>
+    </div>
+    <div class="form-floating mb-2">
+        <input name="pageSize" asp-for="@Model.PageViewModel.PageSize" class="form-control"/>
+        <label>@Html.DisplayNameFor(m => m.PageViewModel.PageSize)</label>
+    </div>
+
+
+    <input type="submit" value="Поиск" class="btn w-100 btn-outline-dark"/>
+</form>
+
+<partial name="ShowUserCards" model="@Model"/>

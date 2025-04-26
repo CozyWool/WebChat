@@ -8,7 +8,7 @@ using WebChatApplication.Messages;
 using WebChatApplication.Models;
 using WebChatApplication.Models.User;
 using WebChatApplication.Models.User.Email;
-using WebChatApplication.Models.User.FilterSortPagingFriends;
+using WebChatApplication.Models.User.FilterSortPaging;
 using WebChatApplication.Models.User.Manage;
 using WebChatApplication.Models.User.PasswordRecovery;
 using WebChatApplication.Services;
@@ -16,56 +16,42 @@ using WebChatApplication.Services;
 namespace WebChatApplication.Controllers;
 
 [Route("account")]
-public class AccountController(IUserService userService) : Controller
+public class AccountController(IUserService userService, IRoleService roleService) : Controller
 {
-    [HttpGet("test")]
-    public IActionResult test()
-    {
-        return View(@"testEmailConfirmationTemplate", new EmailUserModel
-        {
-            Username = "CozyWool",
-            Email = "vsergeev201530@gmail",
-            EmailConfirmationToken = "134124124",
-            EmailConfirmationUrl = "https://141241"
-        });
-    }
+    private List<RoleModel> Roles => roleService.GetAll().Result;
 
     private async Task<StatusMessageModel> SendConfirmationEmail(string? email)
     {
-        if (User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email).Value != email)
-        {
-            return new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту", true);
-        }
-
-        if (email is null)
+        if (User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email).Value != email ||
+            email is null)
         {
             return new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту", true);
         }
 
         var emailToken = SecurityHelper.GenerateTokenFromEmail(email);
         var emailConfirmationUrl = Url.Action(
-            "ConfirmEmail",
-            "Account",
-            new {email, token = emailToken},
-            HttpContext.Request.Scheme);
+                                              "ConfirmEmail",
+                                              "Account",
+                                              new {email, token = emailToken},
+                                              HttpContext.Request.Scheme);
 
         var model = new EmailUserModel
-        {
-            Email = email,
-            EmailConfirmationToken = emailToken,
-            EmailConfirmationUrl = emailConfirmationUrl
-        };
+                    {
+                        Email = email,
+                        EmailConfirmationToken = emailToken,
+                        EmailConfirmationUrl = emailConfirmationUrl
+                    };
         var sendResult = await userService.SendConfirmationEmail(model);
 
         var statusMessage = sendResult switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel(
-                $"Письмо для подтверждения успешно выслано на почту {email}"),
-            UserServiceStatusCodes.AlreadyEmailConfirmed =>
-                new StatusMessageModel("Электронная почта уже подтверждена"),
-            _ => new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту",
-                true)
-        };
+                            {
+                                UserServiceStatusCodes.OK => new StatusMessageModel(
+                                     $"Письмо для подтверждения успешно выслано на почту {email}"),
+                                UserServiceStatusCodes.AlreadyEmailConfirmed =>
+                                    new StatusMessageModel("Электронная почта уже подтверждена"),
+                                _ => new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту",
+                                                            true)
+                            };
         return statusMessage;
     }
 
@@ -87,21 +73,21 @@ public class AccountController(IUserService userService) : Controller
         if (email is null || token is null)
         {
             model.StatusMessage = new StatusMessageModel(
-                "Ссылка неверна, проверьте ссылку или попробуйте выслать письмо повторно",
-                true);
+                                                         "Ссылка неверна, проверьте ссылку или попробуйте выслать письмо повторно",
+                                                         true);
             return View(model);
         }
 
         var confirmResult = await userService.ConfirmEmail(email, token);
         model.StatusMessage = confirmResult switch
-        {
-            UserServiceStatusCodes.OK =>
-                new StatusMessageModel("Электронная почта успешно подтверждена"),
-            UserServiceStatusCodes.AlreadyEmailConfirmed =>
-                new StatusMessageModel("Электронная почта уже подтверждена"),
-            _ => new StatusMessageModel("Произошла ошибка при подтверждении электронной почты",
-                true)
-        };
+                              {
+                                  UserServiceStatusCodes.OK =>
+                                      new StatusMessageModel("Электронная почта успешно подтверждена"),
+                                  UserServiceStatusCodes.AlreadyEmailConfirmed =>
+                                      new StatusMessageModel("Электронная почта уже подтверждена"),
+                                  _ => new StatusMessageModel("Произошла ошибка при подтверждении электронной почты",
+                                                              true)
+                              };
         return View("_ShowStatusMessageWithButtons", model.StatusMessage);
     }
 
@@ -173,16 +159,16 @@ public class AccountController(IUserService userService) : Controller
         {
             case UserServiceStatusCodes.OK:
                 return RedirectToAction("ConfirmEmail", "Account", new
-                {
-                    email = model.Email,
-                    needToSend = true,
-                    returnUrl = returnUrl
-                });
+                                                                   {
+                                                                       email = model.Email,
+                                                                       needToSend = true,
+                                                                       returnUrl = returnUrl
+                                                                   });
             case UserServiceStatusCodes.AccountDeleted:
                 ModelState.AddModelError("", "Пользователь удалён");
                 break;
             case UserServiceStatusCodes.AccountBanned:
-                ModelState.AddModelError("", "Пользователь забанен");
+                ModelState.AddModelError("", "Пользователь заблокирован");
                 break;
             case UserServiceStatusCodes.AlreadyExist:
                 ModelState.AddModelError("", "Пользователь уже существует");
@@ -245,20 +231,20 @@ public class AccountController(IUserService userService) : Controller
 
         var username = User.Identity.Name;
         var model = new ChangeProfileInfoModel
-        {
-            OldUsername = username,
-            Username = username,
-            RoleName = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Role).Value switch
-            {
-                "User" => "Пользователь",
-                "Admin" => "Администратор",
-                "SuperAdmin" => "Супер-Администратор",
-                _ => "Не определена"
-            },
-            CreatedAt = DateTime.Parse(User.Claims.FirstOrDefault(claim => claim.Type == "CreatedAt").Value,
-                CultureInfo.CurrentCulture),
-            StatusMessage = statusMessage
-        };
+                    {
+                        OldUsername = username,
+                        Username = username,
+                        RoleName = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Role).Value switch
+                                   {
+                                       "User"       => "Пользователь",
+                                       "Admin"      => "Администратор",
+                                       "SuperAdmin" => "Супер-Администратор",
+                                       _            => "Не определена"
+                                   },
+                        CreatedAt = DateTime.Parse(User.Claims.FirstOrDefault(claim => claim.Type == "CreatedAt").Value,
+                                                   CultureInfo.CurrentCulture),
+                        StatusMessage = statusMessage
+                    };
         return View($"Manage/{nameof(ChangeProfileInfo)}", model);
     }
 
@@ -276,14 +262,14 @@ public class AccountController(IUserService userService) : Controller
         var statusCode = await userService.UpdateProfile(model);
 
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel("Профиль успешно обновлён"),
-            UserServiceStatusCodes.AlreadyExist =>
-                new StatusMessageModel("Имя пользователя уже используется", true),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.OK => new StatusMessageModel("Профиль успешно обновлён"),
+                                  UserServiceStatusCodes.AlreadyExist =>
+                                      new StatusMessageModel("Имя пользователя уже используется", true),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  _ => model.StatusMessage
+                              };
 
         return RedirectToAction("ChangeProfileInfo", model.StatusMessage);
     }
@@ -310,10 +296,10 @@ public class AccountController(IUserService userService) : Controller
 
         var email = User.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Email).Value;
         var model = new ChangeEmailModel
-        {
-            Email = email,
-            StatusMessage = statusMessage
-        };
+                    {
+                        Email = email,
+                        StatusMessage = statusMessage
+                    };
         return View($"Manage/{nameof(ChangeEmail)}", model);
     }
 
@@ -358,9 +344,9 @@ public class AccountController(IUserService userService) : Controller
         ViewData["Title"] = "Изменение пароля";
 
         var model = new ChangePasswordModel
-        {
-            StatusMessage = statusMessage
-        };
+                    {
+                        StatusMessage = statusMessage
+                    };
         return View($"Manage/{nameof(ChangePassword)}", model);
     }
 
@@ -378,17 +364,17 @@ public class AccountController(IUserService userService) : Controller
         var statusCode = await userService.UpdatePassword(model);
 
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel("Пароль успешно обновлён"),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                true),
-            UserServiceStatusCodes.NotValid =>
-                new StatusMessageModel("Текущий пароль введён неверно", true),
-            UserServiceStatusCodes.AlreadyExist => new
-                StatusMessageModel("Новый пароль должен отличаться от текущего",
-                    true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.OK => new StatusMessageModel("Пароль успешно обновлён"),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  UserServiceStatusCodes.NotValid =>
+                                      new StatusMessageModel("Текущий пароль введён неверно", true),
+                                  UserServiceStatusCodes.AlreadyExist => new
+                                      StatusMessageModel("Новый пароль должен отличаться от текущего",
+                                                         true),
+                                  _ => model.StatusMessage
+                              };
 
         return RedirectToAction("ChangePassword", model.StatusMessage);
     }
@@ -430,9 +416,9 @@ public class AccountController(IUserService userService) : Controller
     {
         ViewData["Title"] = "Восстановление пароля";
         var model = new SendPasswordRecoveryEmailModel
-        {
-            StatusMessage = statusMessage
-        };
+                    {
+                        StatusMessage = statusMessage
+                    };
         return View($"PasswordRecovery/{nameof(SendPasswordRecoveryEmail)}", model);
     }
 
@@ -444,44 +430,44 @@ public class AccountController(IUserService userService) : Controller
         if (email is null)
         {
             return RedirectToAction("SendPasswordRecoveryEmail",
-                new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту",
-                    true));
+                                    new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту",
+                                                           true));
         }
 
         var passwordRecoveryToken = SecurityHelper.GenerateTokenFromEmail(email);
         var passwordRecoveryUrl = Url.Action(
-            "RecoverPassword",
-            "Account",
-            new {email, token = passwordRecoveryToken},
-            HttpContext.Request.Scheme);
+                                             "RecoverPassword",
+                                             "Account",
+                                             new {email, token = passwordRecoveryToken},
+                                             HttpContext.Request.Scheme);
         model.PasswordRecoveryToken = passwordRecoveryToken;
         model.PasswordRecoveryUrl = passwordRecoveryUrl;
 
         var statusCode = await userService.SendPasswordRecoveryEmail(model);
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel("Письмо отправлено"),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                true),
-            UserServiceStatusCodes.NotValid =>
-                new StatusMessageModel("Произошла ошибка при отправке письма", true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.OK => new StatusMessageModel("Письмо отправлено"),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  UserServiceStatusCodes.NotValid =>
+                                      new StatusMessageModel("Произошла ошибка при отправке письма", true),
+                                  _ => model.StatusMessage
+                              };
         return RedirectToAction("SendPasswordRecoveryEmail", model.StatusMessage);
     }
 
     [HttpGet("recover-password")]
     [AllowAnonymous]
     public async Task<IActionResult> RecoverPassword(string? email, string? token,
-        StatusMessageModel? statusMessage = null)
+                                                     StatusMessageModel? statusMessage = null)
     {
         ViewData["Title"] = "Восстановление пароля";
 
         var model = new PasswordRecoveryModel
-        {
-            Email = email,
-            PasswordRecoveryToken = token
-        };
+                    {
+                        Email = email,
+                        PasswordRecoveryToken = token
+                    };
 
         if (email is null || token is null)
         {
@@ -492,18 +478,18 @@ public class AccountController(IUserService userService) : Controller
 
         var statusCode = await userService.VerifyPasswordRecoveryToken(email, token);
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.AccountBanned =>
-                new StatusMessageModel("Пользователь заблокирован", true),
-            UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён",
-                true),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                true),
-            UserServiceStatusCodes.NotValid => new
-                StatusMessageModel("Произошла ошибка при восстановлении пароля",
-                    true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.AccountBanned =>
+                                      new StatusMessageModel("Пользователь заблокирован", true),
+                                  UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён",
+                                       true),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  UserServiceStatusCodes.NotValid => new
+                                      StatusMessageModel("Произошла ошибка при восстановлении пароля",
+                                                         true),
+                                  _ => model.StatusMessage
+                              };
 
         if (string.IsNullOrEmpty(statusMessage.Message))
         {
@@ -530,18 +516,18 @@ public class AccountController(IUserService userService) : Controller
 
         var statusCode = await userService.VerifyPasswordRecoveryToken(email, token);
         model.StatusMessage = statusCode switch
-        {
-            UserServiceStatusCodes.AccountBanned =>
-                new StatusMessageModel("Пользователь заблокирован", true),
-            UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён",
-                true),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                true),
-            UserServiceStatusCodes.NotValid => new
-                StatusMessageModel("Произошла ошибка при восстановлении пароля",
-                    true),
-            _ => model.StatusMessage
-        };
+                              {
+                                  UserServiceStatusCodes.AccountBanned =>
+                                      new StatusMessageModel("Пользователь заблокирован", true),
+                                  UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён",
+                                       true),
+                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+                                       true),
+                                  UserServiceStatusCodes.NotValid => new
+                                      StatusMessageModel("Произошла ошибка при восстановлении пароля",
+                                                         true),
+                                  _ => model.StatusMessage
+                              };
 
         if (statusCode != UserServiceStatusCodes.OK)
         {
@@ -560,8 +546,8 @@ public class AccountController(IUserService userService) : Controller
     {
         await userService.SendFriendRequest(usernameTo);
         return !string.IsNullOrEmpty(returnUrl)
-            ? LocalRedirect(returnUrl)
-            : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
     }
 
     [Authorize]
@@ -570,8 +556,8 @@ public class AccountController(IUserService userService) : Controller
     {
         await userService.AcceptFriendRequest(usernameTo);
         return !string.IsNullOrEmpty(returnUrl)
-            ? LocalRedirect(returnUrl)
-            : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
     }
 
     [Authorize]
@@ -580,8 +566,8 @@ public class AccountController(IUserService userService) : Controller
     {
         await userService.CancelFriendRequest(usernameTo);
         return !string.IsNullOrEmpty(returnUrl)
-            ? LocalRedirect(returnUrl)
-            : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
     }
 
     [Authorize]
@@ -590,8 +576,8 @@ public class AccountController(IUserService userService) : Controller
     {
         await userService.DeleteFriend(usernameTo);
         return !string.IsNullOrEmpty(returnUrl)
-            ? LocalRedirect(returnUrl)
-            : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
     }
 
     [Authorize]
@@ -600,8 +586,8 @@ public class AccountController(IUserService userService) : Controller
     {
         await userService.RemoveFromBlacklist(usernameTo);
         return !string.IsNullOrEmpty(returnUrl)
-            ? LocalRedirect(returnUrl)
-            : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
     }
 
     [Authorize]
@@ -610,76 +596,104 @@ public class AccountController(IUserService userService) : Controller
     {
         await userService.AddToBlacklist(usernameTo);
         return !string.IsNullOrEmpty(returnUrl)
-            ? LocalRedirect(returnUrl)
-            : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
+                   ? LocalRedirect(returnUrl)
+                   : RedirectToAction("ProfileInfo", "Account", new {username = usernameTo});
     }
 
     [HttpGet("friends")]
     [Authorize]
-    public async Task<IActionResult> FriendList()
+    public async Task<IActionResult> FriendList(FindUsersRequest request)
     {
         ViewData["ActivePage"] = nameof(FriendList);
         ViewData["Title"] = "Список друзей";
 
 
-        var model = await userService.GetUserCards(User.Identity.Name, UserRelationTypes.Friend);
+        request.RelationType = UserRelationTypes.Friend;
+        var (users, count) = await userService.GetUsersPagedSortedFiltered(request);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false);
         return View($"RelatedUsers/{nameof(FriendList)}", model);
     }
 
     [HttpGet("incoming-friend-requests")]
     [Authorize]
-    public async Task<IActionResult> IncomingFriendRequests()
+    public async Task<IActionResult> IncomingFriendRequests(FindUsersRequest request)
     {
         ViewData["ActivePage"] = nameof(IncomingFriendRequests);
         ViewData["Title"] = "Входящие заявки";
 
 
-        var model = await userService.GetUserCards(User.Identity.Name, UserRelationTypes.IncomingFriendRequest);
+        request.RelationType = UserRelationTypes.IncomingFriendRequest;
+        var (users, count) = await userService.GetUsersPagedSortedFiltered(request);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false);
         return View($"RelatedUsers/{nameof(IncomingFriendRequests)}", model);
     }
 
     [HttpGet("outgoing-friend-requests")]
     [Authorize]
-    public async Task<IActionResult> OutgoingFriendRequests()
+    public async Task<IActionResult> OutgoingFriendRequests(FindUsersRequest request)
     {
         ViewData["ActivePage"] = nameof(OutgoingFriendRequests);
         ViewData["Title"] = "Исходящие заявки";
 
 
-        var model = await userService.GetUserCards(User.Identity.Name, UserRelationTypes.OutgoingFriendRequest);
+        request.RelationType = UserRelationTypes.OutgoingFriendRequest;
+        var (users, count) = await userService.GetUsersPagedSortedFiltered(request);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false);
         return View($"RelatedUsers/{nameof(OutgoingFriendRequests)}", model);
     }
 
     [HttpGet("blacklist")]
     [Authorize]
-    public async Task<IActionResult> Blacklist()
+    public async Task<IActionResult> Blacklist(FindUsersRequest request)
     {
         ViewData["ActivePage"] = nameof(Blacklist);
         ViewData["Title"] = "Черный список";
 
+        var (users, count) =
+            await userService.GetUsersPagedSortedFilteredByMultipleRelationTypes(
+                 [UserRelationTypes.Blacklisted, UserRelationTypes.BlacklistedBothWays],
+                 request);
 
-        var model = await userService.GetUserCards(User.Identity.Name, UserRelationTypes.Blacklisted);
-        model.AddRange(await userService.GetUserCards(User.Identity.Name, UserRelationTypes.BlacklistedBothWays));
-        return View($"RelatedUsers/{nameof(FriendList)}", model);
+        var model = new FindUsersViewModel(users,
+                                           count,
+                                           request,
+                                           Roles,
+                                           isNeedToFilterRelationTypes: false,
+                                           isNeedToFilterRoles: false);
+
+        return View($"RelatedUsers/{nameof(Blacklist)}", model);
     }
 
     [HttpGet("find-friends")]
     [Authorize]
-    public async Task<IActionResult> FindFriends(FindFriendsRequest request)
+    public async Task<IActionResult> FindFriends(FindUsersRequest request)
     {
         ViewData["ActivePage"] = nameof(FindFriends);
         ViewData["Title"] = "Поиск друзей";
 
-        var (users, count) = await userService.GetFindFriendsPagedSortedFiltered(request);
-        var model = new FindFriendsViewModel
+
+        List<UserCardModel>? users;
+        int count;
+        if (request.RelationType is null)
         {
-            Users = users,
-            PageViewModel = new FriendPageViewModel(count, request.PageNumber, request.PageSize),
-            SortViewModel = new FriendSortViewModel(request.SortOrder),
-            FilterViewModel = new FriendFilterViewModel(request.Username),
-        };
+            (users, count) = await userService.GetUsersPagedSortedFilteredByMultipleRelationTypes([], request);
+        }
+        else
+        {
+            List<UserRelationTypes> relationTypes = [request.RelationType.Value];
+            if (request.RelationType is UserRelationTypes.Blacklisted)
+            {
+                relationTypes.Add(UserRelationTypes.BlacklistedBothWays);
+            }
+
+            (users, count) =
+                await userService.GetUsersPagedSortedFilteredByMultipleRelationTypes(relationTypes, request);
+        }
+
+        var model = new FindUsersViewModel(users, count, request, Roles);
         return View($"RelatedUsers/{nameof(FindFriends)}", model);
     }
+
 
     //Админская часть
     [HttpPost("ban-user")]
@@ -689,20 +703,25 @@ public class AccountController(IUserService userService) : Controller
         var result = await userService.BanUser(username);
 
         var statusMessage = result switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel("Пользователь успешно забанен."),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден.", true),
-            UserServiceStatusCodes.AccountBanned => new StatusMessageModel("Пользователь уже забанен.", true),
-            _ => new StatusMessageModel()
-        };
+                            {
+                                UserServiceStatusCodes.OK =>
+                                    new StatusMessageModel("Пользователь успешно заблокирован."),
+                                UserServiceStatusCodes.NotFound =>
+                                    new StatusMessageModel("Пользователь не найден.", true),
+                                UserServiceStatusCodes.NotValid =>
+                                    new StatusMessageModel("Произошла ошибка при блокировке пользователя.", true),
+                                UserServiceStatusCodes.AccountBanned =>
+                                    new StatusMessageModel("Пользователь уже заблокирован.", true),
+                                _ => new StatusMessageModel()
+                            };
 
         return RedirectToAction("ProfileInfo", "Account",
-            new
-            {
-                username = username,
-                message = statusMessage.Message,
-                isError = statusMessage.IsError
-            });
+                                new
+                                {
+                                    username = username,
+                                    message = statusMessage.Message,
+                                    isError = statusMessage.IsError
+                                });
     }
 
     [HttpPost("unban-user")]
@@ -712,19 +731,110 @@ public class AccountController(IUserService userService) : Controller
         var result = await userService.UnbanUser(username);
 
         var statusMessage = result switch
-        {
-            UserServiceStatusCodes.OK => new StatusMessageModel("Пользователь успешно разбанен."),
-            UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден.", true),
-            UserServiceStatusCodes.NotValid => new StatusMessageModel("Пользователь не забанен.",true),
-            _ => new StatusMessageModel()
-        };
+                            {
+                                UserServiceStatusCodes.OK =>
+                                    new StatusMessageModel("Пользователь успешно разблокирован."),
+                                UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден.",
+                                     true),
+                                UserServiceStatusCodes.NotValid => new
+                                    StatusMessageModel("Пользователь не заблокирован.",
+                                                       true),
+                                _ => new StatusMessageModel()
+                            };
 
         return RedirectToAction("ProfileInfo", "Account",
-            new
-            {
-                username = username,
-                message = statusMessage.Message,
-                isError = statusMessage.IsError
-            });;
+                                new
+                                {
+                                    username = username,
+                                    message = statusMessage.Message,
+                                    isError = statusMessage.IsError
+                                });
+    }
+
+    [HttpPost("promote-user")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> PromoteUser(string username)
+    {
+        var result = await userService.PromoteUser(username);
+
+        var statusMessage = result switch
+                            {
+                                UserServiceStatusCodes.OK =>
+                                    new StatusMessageModel("Пользователь успешно повышен до \"Администратор\"."),
+                                UserServiceStatusCodes.NotFound =>
+                                    new StatusMessageModel("Пользователь или роль \"Администратор\" не найдены.", true),
+                                UserServiceStatusCodes.NotValid =>
+                                    new StatusMessageModel("Произошла ошибка при повышении пользователя.", true),
+                                _ => new StatusMessageModel()
+                            };
+
+        return RedirectToAction("ProfileInfo", "Account",
+                                new
+                                {
+                                    username = username,
+                                    message = statusMessage.Message,
+                                    isError = statusMessage.IsError
+                                });
+    }
+
+    [HttpPost("demote-user")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> DemoteUser(string username)
+    {
+        var result = await userService.DemoteUser(username);
+
+        var statusMessage = result switch
+                            {
+                                UserServiceStatusCodes.OK =>
+                                    new StatusMessageModel("Пользователь успешно понижен до \"Пользователь\"."),
+                                UserServiceStatusCodes.NotFound =>
+                                    new StatusMessageModel("Пользователь или роль \"Пользователь\" не найдены.", true),
+                                UserServiceStatusCodes.NotValid =>
+                                    new
+                                        StatusMessageModel("Пользователь не администратор или вы не являетесь Супер-Администратором.",
+                                                           true),
+                                _ => new StatusMessageModel()
+                            };
+
+        return RedirectToAction("ProfileInfo", "Account",
+                                new
+                                {
+                                    username = username,
+                                    message = statusMessage.Message,
+                                    isError = statusMessage.IsError
+                                });
+    }
+
+    [HttpGet("admin-menu")]
+    [Authorize(Roles = "Admin, SuperAdmin")]
+    public async Task<IActionResult> AdminMenu(FindUsersRequest request)
+    {
+        ViewData["Title"] = "Меню администратора";
+
+        var adminRole = await roleService.GetByName("Admin");
+        if (adminRole is null)
+        {
+            return View("_ShowStatusMessageWithButtons",
+                        new StatusMessageModel("Роль администратора не найдена в базе данных", true));
+        }
+
+        var superAdminRole = await roleService.GetByName("SuperAdmin");
+        if (superAdminRole is null)
+        {
+            return View("_ShowStatusMessageWithButtons",
+                        new StatusMessageModel("Роль супер-администратора не найдена в базе данных", true));
+        }
+
+        var (users, count) =
+            await userService.GetUsersPagedSortedFilteredByMultipleRoles(
+                                                                         [adminRole.Id, superAdminRole.Id],
+                                                                         request);
+        var model = new FindUsersViewModel(users,
+                                           count,
+                                           request,
+                                           Roles,
+                                           isNeedToFilterRelationTypes: false,
+                                           isNeedToFilterRoles: false);
+        return View(model);
     }
 }

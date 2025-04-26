@@ -25,7 +25,7 @@
                 <div class="user-card-buttons">
                     <form method="post" class="d-flex justify-content-between w-100"
                           style="flex-direction: row;">
-                        <input asp-for="@Model.Username" name="usernameTo" hidden/>
+                        <input value="@Model.Username" name="usernameTo" hidden/>
 
                         @if (Model.RelationType is UserRelationTypes.NotRelated)
                         {
