@@ -1,11 +1,6 @@
 @{
     Layout = "RelatedUsers/_RelatedUsersNav";
 }
-@model List<WebChatApplication.Models.User.UserCardModel>
+@model WebChatApplication.Models.User.FilterSortPaging.FindUsersViewModel
 
-<div>
-    @foreach (var user in Model)
-    {
-        <partial name="UserCard" model="user"></partial>
-    }
-</div>
+<partial name="FindUsers" model="Model"/>

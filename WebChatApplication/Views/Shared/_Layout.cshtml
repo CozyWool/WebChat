@@ -28,20 +28,32 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" aa="" asp-controller="WebChat" asp-action="Index">Главная</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="ProfileInfo"
-                               asp-route-username="@User.Identity.Name">
-                                Мой профиль
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Account"
-                               asp-action="FriendList">
-                                Друзья
-                            </a>
-                        </li>
+                        @if (User.Identity is {IsAuthenticated: true})
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account"
+                                   asp-action="ProfileInfo"
+                                   asp-route-username="@User.Identity.Name">
+                                    Мой профиль
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account"
+                                   asp-action="FriendList">
+                                    Друзья
+                                </a>
+                            </li>
+                            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Account"
+                                       asp-action="AdminMenu">
+                                        Меню администратора
+                                    </a>
+                                </li>
+                            }
+                        }
                     </ul>
-
                     @if (User.Identity is {IsAuthenticated: true})
                     {
                         <ul class="navbar-nav float-left">
