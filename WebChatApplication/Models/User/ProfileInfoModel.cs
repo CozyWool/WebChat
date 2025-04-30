@@ -21,4 +21,5 @@ public class ProfileInfoModel
     public string ProfilePictureUrl { get; set; }
     public UserRelationTypes RelationToUser { get; set; }
     public StatusMessageModel StatusMessage { get; set; } = new();
+    public Guid UserId { get; set; }
 }

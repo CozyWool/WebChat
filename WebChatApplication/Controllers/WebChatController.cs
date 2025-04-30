@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebChatApplication.DataAccess.Contexts;
+using WebChatApplication.Models;
+using WebChatApplication.Services;
 
 namespace WebChatApplication.Controllers;
 
@@ -8,11 +9,11 @@ namespace WebChatApplication.Controllers;
 [Authorize]
 public class WebChatController : Controller
 {
-    private ApplicationDbContext _applicationDbContext;
+    private readonly IChatService _chatService;
 
-    public WebChatController(ApplicationDbContext applicationDbContext)
+    public WebChatController(IChatService chatService)
     {
-        _applicationDbContext = applicationDbContext;
+        _chatService = chatService;
     }
 
     [AllowAnonymous]
@@ -23,5 +24,15 @@ public class WebChatController : Controller
         ViewData["Title"] = "Веб-чат";
 
         return View();
+    }
+
+    [Route("private-chat/{userId:guid}")]
+    public async Task<IActionResult> PrivateChat(Guid userId)
+    {
+        ViewData["Title"] = "Чаты";
+    
+        var model = await _chatService.GetPrivateChatByUserId(userId);
+        
+        return View(model);
     }
 }

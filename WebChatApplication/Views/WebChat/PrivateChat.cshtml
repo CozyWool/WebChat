@@ -1,0 +1,270 @@
+@model WebChatApplication.Models.PrivateChatModel
+
+<style>
+    .receiver-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 20px;
+        border-radius: 20px;
+        height: 70px;
+        background-color: #e6e6e6;
+    }
+
+    .receiver-info .first-letter {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: darkblue;
+        color: white;
+        font-size: 35px;
+        margin-right: 10px;
+        text-align: center;
+    }
+
+    .messages-box {
+        display: flex;
+        flex-direction: column;
+        background-color: #e6e6e6;
+        height: 75vh;
+        overflow-y: auto;
+        max-height: 800px;
+        padding: 20px;
+    }
+
+    .profile-img {
+        width: 36px;
+        height: 36px;
+        border-radius: 100%;
+    }
+
+    .profile-img-container {
+        margin-bottom: auto;
+    }
+
+    .message {
+        display: flex;
+        padding: 15px;
+        background-color: #e6e6e6;
+        border-radius: 15px;
+        margin: 5px 1px;
+        max-width: 75%;
+    }
+
+    .message-content {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        margin-left: 10px;
+    }
+
+    .message-username {
+        color: darkblue;
+        text-decoration: none;
+    }
+
+    .sent-message {
+        background-color: #effdde;
+        width: 100%;
+        align-self: start;
+    }
+
+    .received-message {
+        background-color: #ffffff;
+        width: 100%;
+        align-self: start;
+    }
+
+    .sent-at-span {
+        margin-left: auto;
+        margin-top: auto;
+        align-self: center;
+    }
+
+    .send-message-box {
+        display: flex;
+        margin-top: 20px;
+    }
+
+    .message-field {
+        flex: 1;
+        border: none;
+        border-radius: 20px;
+        background-color: #e6e6e6;
+        padding: 10px;
+    }
+
+    .message-field:focus {
+        outline: none;
+    }
+
+    .send-btn {
+        width: 20%;
+        margin-left: 10px;
+        border-radius: 20px;
+    }
+</style>
+
+
+<div class="message-wrap">
+    <div class="receiver-info">
+        <div>
+            <a href="@Url.Action(
+                                 "ProfileInfo",
+                                 "Account",
+                                 new {username = Model.PrivateUser.Username},
+                                 Context.Request.Scheme)">
+                <img src="@Model.PrivateUser.ProfilePictureUrl" class="profile-img" alt="..."></a>
+        </div>
+        <h4 class="ms-4 mt-auto mb-auto">@Model.PrivateUser.Username</h4>
+    </div>
+
+    <div class="messages-box">
+        @foreach (var item in Model.Messages)
+        {
+            if (item.IsCurrentUserSentMessage)
+            {
+                <div class="message sent-message">
+                    <div class="profile-img-container">
+                        <a href="@Url.Action(
+                                             "ProfileInfo",
+                                             "Account",
+                                             new {username = Model.CurrentUser.Username},
+                                             Context.Request.Scheme)">
+                            <img src="@Model.CurrentUser.ProfilePictureUrl" class="profile-img" alt="..."></a>
+                    </div>
+
+                    <div class="message-content">
+                        <a href="@Url.Action(
+                                             "ProfileInfo",
+                                             "Account",
+                                             new {username = Model.CurrentUser.Username},
+                                             Context.Request.Scheme)"
+                           class="message-username">
+                            <span>@Model.CurrentUser.Username</span>
+                        </a>
+                        <span>@item.Content</span>
+                        <span class="date-utc-span sent-at-span">@item.SentAt.ToString()</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="message received-message">
+                    <div class="profile-img-container">
+                        <a href="@Url.Action(
+                                             "ProfileInfo",
+                                             "Account",
+                                             new {username = Model.PrivateUser.Username},
+                                             Context.Request.Scheme)">
+                            <img src="@Model.PrivateUser.ProfilePictureUrl" class="profile-img" alt="..."></a>
+                    </div>
+
+                    <div class="message-content">
+                        <a href="@Url.Action(
+                                             "ProfileInfo",
+                                             "Account",
+                                             new {username = Model.PrivateUser.Username},
+                                             Context.Request.Scheme)"
+                           class="message-username">
+                            <span>@Model.PrivateUser.Username</span>
+                        </a>
+                        <span>@item.Content</span>
+                        <span class="date-utc-span sent-at-span">@item.SentAt.ToString()</span>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="send-message-box">
+        <textarea rows="4" class="message-field" placeholder="Сообщение..."></textarea>
+        <button class="send-btn btn btn-dark">Отправить</button>
+    </div>
+
+</div>
+
+@section Scripts{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+
+        connection.start().then(function () {
+            console.log("Connected!");
+        }).catch(function (err) {
+            console.error(err.toString())
+        });
+
+        function sendMessage() {
+            const chatId = "@Model.Id";
+            const message = $(".message-field").val();
+
+            if (message === "") {
+                return;
+            }
+
+            connection.invoke("SendMessage", chatId, message);
+            $(".message-field").val("").focus();
+        }
+
+        $(".send-btn").click(sendMessage);
+        $(".message-field").keypress(function (e) {
+            if (e.which === 13 && !e.shiftKey) {
+                e.preventDefault();
+
+                sendMessage();
+            }
+        });
+
+        connection.on("ReceiveMessage", function (message, sentAt, senderId) {
+            console.log("Received message", message, sentAt, senderId);
+            let _messageElement = ``;
+            if (senderId == "@Model.CurrentUser.UserId") {
+                _messageElement = `
+                <div class="message sent-message">
+                    <div class="profile-img-container">
+                        <a href="@Url.Action("ProfileInfo", "Account", new {username = Model.CurrentUser.Username}, Context.Request.Scheme)">
+                            <img src="@Model.CurrentUser.ProfilePictureUrl" class="profile-img" alt="..."></a>
+                    </div>
+
+                    <div class="message-content">
+                        <a href="@Url.Action("ProfileInfo", "Account", new {username = Model.PrivateUser.Username}, Context.Request.Scheme)" 
+                           class="message-username">
+                            <span>@Model.CurrentUser.Username</span>
+                        </a>
+                        <span>${message}</span>
+                    </div>
+                    <span class="sent-at-span">${formatDateTime(toLocalTime(sentAt))}</span>
+                </div>`;
+            } else {
+                _messageElement = `
+                <div class="message received-message">
+                    <div class="profile-img-container">
+                        <a href="@Url.Action("ProfileInfo", "Account", new {username = Model.PrivateUser.Username}, Context.Request.Scheme)">
+                            <img src="@Model.PrivateUser.ProfilePictureUrl" class="profile-img" alt="..."></a>
+                    </div>
+
+                    <div class="message-content">
+                        <a href="@Url.Action("ProfileInfo", "Account", new {username = Model.PrivateUser.Username}, Context.Request.Scheme)" 
+                           class="message-username">
+                            <span>@Model.PrivateUser.Username</span>
+                        </a>
+                        <span>${message}</span>
+                    </div>
+                    <span class="sent-at-span">${formatDateTime(toLocalTime(sentAt))}</span>
+                </div>`;
+            }
+
+            $(".messages-box").append(_messageElement);
+            $(".messages-box").scrollTop($(".messages-box")[0].scrollHeight);
+        });
+
+        $(function () {
+            // Go to last message
+            $(".messages-box").scrollTop($(".messages-box")[0].scrollHeight);
+        })
+
+    </script>
+}
+

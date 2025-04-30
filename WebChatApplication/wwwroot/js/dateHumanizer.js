@@ -59,3 +59,9 @@ document.querySelectorAll('.date-utc-input').forEach(el => {
         el.value = formatDateTime(toLocalTime(utc));
     }
 });
+document.querySelectorAll('.date-utc-span').forEach(el => {
+    const utc = el.textContent;
+    if (utc) {
+        el.textContent = formatDateTime(toLocalTime(utc));
+    }
+});

@@ -26,7 +26,7 @@
                 <label class="input-group-text"
                        asp-for="ProfilePicture">@Html.DisplayNameFor(m => m.ProfilePicture)</label>
                 <input type="file" class="form-control" accept="image/*" asp-for="ProfilePicture">
-                <span asp-validation-for="ProfilePicture" class="text-danger"></span>
+                <span asp-validation-for="ProfilePicture" class="text-danger ms-2 mt-auto mb-auto"></span>
             </div>
             <div class="input-group mb-2">
                 <button type="button" class="btn btn-sm btn-danger w-100" onclick="deleteProfilePicture('@Model.Username')">
