@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WebChatApplication.DataAccess.Contexts;
 using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Extensions;
+using WebChatApplication.Hubs;
 using WebChatApplication.Middlewares;
 using WebChatApplication.Services;
 
@@ -21,14 +22,19 @@ public class Startup(IConfiguration configuration)
                                                         options.UseNpgsql(configuration
                                                                               .GetConnectionString("DefaultConnection"));
                                                     });
-        
+
         services.AddScoped<IUserRelationRepository, UserRelationRepository>();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserService, UserService>();
-        
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IRoleService, RoleService>();
+
+        services.AddScoped<IChatService, ChatService>();
+        services.AddScoped<IChatRepository, ChatRepository>();
+        services.AddSignalR();
 
         services.AddFluentEmail(configuration);
         services.AddScoped<IEmailService, EmailService>();
@@ -57,7 +63,7 @@ public class Startup(IConfiguration configuration)
 
         app.UseStaticFiles();
         app.UseRouting();
-
+        
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -67,6 +73,7 @@ public class Startup(IConfiguration configuration)
                          {
                              endpoints.MapControllerRoute("default",
                                                           "{controller=WebChat}/{action=Index}/{id?}");
+                             endpoints.MapHub<ChatHub>("/chatHub");
                          });
     }
 }

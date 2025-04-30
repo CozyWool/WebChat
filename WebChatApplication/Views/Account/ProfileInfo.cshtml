@@ -65,6 +65,10 @@
                     <div class="alert alert-primary" role="alert">
                         В друзьях
                     </div>
+                    <button asp-controller="WebChat" asp-action="PrivateChat" asp-route-userId="@Model.UserId"
+                            class="btn btn-primary w-100 mb-2">
+                        Написать
+                    </button>
                     <button asp-controller="Account" asp-action="DeleteFriend" class="btn btn-secondary w-100 mb-2">
                         Удалить из друзей
                     </button>

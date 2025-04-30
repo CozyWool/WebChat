@@ -28,7 +28,7 @@ public class UserRepository : IUserRepository
                .Include(e => e.Role)
                .Include(e => e.RelatedUsers).ThenInclude(e => e.ToUser)
                .Include(e => e.Messages)
-               .Include(e => e.Chats)
+               .Include(e => e.Chats).ThenInclude(e => e.Users)
                .Include(e => e.Actions);
     }
 
@@ -191,6 +191,11 @@ public class UserRepository : IUserRepository
         UserSortState sortOrder)
     {
         var usersQuery = GetUsersQueryable().AsQueryable();
+
+        if (!string.IsNullOrEmpty(currentUsername))
+        {
+            usersQuery = usersQuery.Where(x => x.Username != currentUsername);
+        }
 
         usersQuery = FilterUsersByUsername(username, usersQuery);
 

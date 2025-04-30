@@ -1,6 +1,5 @@
 ﻿using WebChatApplication.Enums;
 using WebChatApplication.Messages;
-using WebChatApplication.Models;
 using WebChatApplication.Models.User;
 using WebChatApplication.Models.User.Email;
 using WebChatApplication.Models.User.Manage;
@@ -23,7 +22,9 @@ public interface IUserService
     Task<UserServiceStatusCodes> SendConfirmationEmail(EmailUserModel emailModel);
     Task<UserServiceStatusCodes> SendPasswordRecoveryEmail(SendPasswordRecoveryEmailModel model);
     Task<UserServiceStatusCodes> VerifyPasswordRecoveryToken(string email, string token);
+/*
     Task<UserServiceStatusCodes> ReAuthenticate(string? emailOrUsername);
+*/
     Task<ProfileInfoModel?> GetUserProfile(string profileUsername);
     Task<string> GetProfilePictureUrl(string username);
     Task<bool> DeleteProfilePicture(string username);

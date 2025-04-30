@@ -93,12 +93,22 @@
         </div>
     </nav>
 </header>
+
 <div class="container">
     <main role="main" class="pb-3">
-        @RenderBody()
+        <div class="bg-grid"></div>
+        <div
+            style="background: #ffffff; 
+            border-radius: 20px;
+             padding: 50px;">
+            @RenderBody()
+        </div>
     </main>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="~/js/bootstrap.min.js"></script>
 <script src="~/js/dateHumanizer.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -128,7 +128,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
                 ModelState.AddModelError("", "Пользователь не найден");
                 break;
             case UserServiceStatusCodes.NotValid:
-                ModelState.AddModelError("", "Неверный пароль или логин");
+                ModelState.AddModelError("", "Неверный логин или пароль");
                 break;
         }
 
@@ -506,6 +506,10 @@ public class AccountController(IUserService userService, IRoleService roleServic
     public async Task<IActionResult> RecoverPassword(PasswordRecoveryModel model)
     {
         ViewData["Title"] = "Восстановление пароля";
+        if (User.Identity.IsAuthenticated)
+        {
+            ModelState.AddModelError("", "Выйдите из аккаунта");
+        }
         if (!ModelState.IsValid)
         {
             return View($"PasswordRecovery/{nameof(RecoverPassword)}", model);

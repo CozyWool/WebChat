@@ -14,4 +14,5 @@ public class UserCardModel
     public bool IsOnline { get; set; }
     public string ProfilePictureUrl { get; set; }
     public UserRelationTypes RelationType { get; set; }
+    public Guid UserId { get; set; }
 }

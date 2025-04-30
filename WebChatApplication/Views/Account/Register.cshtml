@@ -27,7 +27,8 @@
                     <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
                 <div class="form-floating mb-2">
-                    <input type="password" asp-for="ConfirmPassword" class="form-control" id="confirm-password-field"/>
+                    <input type="password" asp-for="ConfirmPassword" class="form-control"
+                           id="confirm-password-field"/>
                     <label asp-for="ConfirmPassword">@Html.DisplayNameFor(m => m.ConfirmPassword)</label>
                     <i class="fa-solid fa-eye" id="show-confirm-password"></i>
                     <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
@@ -42,9 +43,26 @@
     </div>
 </div>
 
+
 <style>
     .form-register {
         max-width: 330px;
+    }
+
+    .fa-eye {
+        position: absolute;
+        top: 35%;
+        right: 4%;
+        cursor: pointer;
+        color: gray;
+    }
+
+    .fa-eye-slash {
+        position: absolute;
+        top: 35%;
+        right: 4%;
+        cursor: pointer;
+        color: gray;
     }
 </style>
 
