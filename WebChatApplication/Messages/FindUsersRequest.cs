@@ -7,7 +7,7 @@ public class FindUsersRequest
 {
     private int _pageSize = 10;
     [BindProperty(Name = "username")] public string? Username { get; set; }
-    [BindProperty(Name = "role")] public int? Role { get; set; }
+    [BindProperty(Name = "role")] public int? RoleId { get; set; }
     [BindProperty(Name = "relationType")] public UserRelationTypes? RelationType { get; set; }
     [BindProperty(Name = "page")] public int PageNumber { get; set; } = 1;
 

@@ -41,17 +41,21 @@ public class AccountController(IUserService userService, IRoleService roleServic
                         EmailConfirmationToken = emailToken,
                         EmailConfirmationUrl = emailConfirmationUrl
                     };
-        var sendResult = await userService.SendConfirmationEmail(model);
-
-        var statusMessage = sendResult switch
-                            {
-                                UserServiceStatusCodes.OK => new StatusMessageModel(
-                                     $"Письмо для подтверждения успешно выслано на почту {email}"),
-                                UserServiceStatusCodes.AlreadyEmailConfirmed =>
-                                    new StatusMessageModel("Электронная почта уже подтверждена"),
-                                _ => new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту",
-                                                            true)
-                            };
+        // var sendResult = await userService.SendConfirmationEmail(model);
+        //
+        // var statusMessage = sendResult switch
+        //                     {
+        //                         UserServiceStatusCodes.OK => new StatusMessageModel(
+        //                              $"Письмо для подтверждения успешно выслано на почту {email}"),
+        //                         UserServiceStatusCodes.AlreadyEmailConfirmed =>
+        //                             new StatusMessageModel("Электронная почта уже подтверждена"),
+        //                         _ => new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту",
+        //                                                     true)
+        //                     };
+        await userService.SendConfirmationEmail(model);
+        var statusMessage = new StatusMessageModel($"Письмо для подтверждения аккаунта отправлено на почту {email}." +
+                                                   $" Обычно письмо приходит в течение 10 минут." +
+                                                   $" Если письмо не пришло, проверьте папку \"Спам\" или запросите письмо повторно.");
         return statusMessage;
     }
 
@@ -443,16 +447,23 @@ public class AccountController(IUserService userService, IRoleService roleServic
         model.PasswordRecoveryToken = passwordRecoveryToken;
         model.PasswordRecoveryUrl = passwordRecoveryUrl;
 
-        var statusCode = await userService.SendPasswordRecoveryEmail(model);
-        model.StatusMessage = statusCode switch
-                              {
-                                  UserServiceStatusCodes.OK => new StatusMessageModel("Письмо отправлено"),
-                                  UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                                       true),
-                                  UserServiceStatusCodes.NotValid =>
-                                      new StatusMessageModel("Произошла ошибка при отправке письма", true),
-                                  _ => model.StatusMessage
-                              };
+        // var statusCode = await userService.SendPasswordRecoveryEmail(model);
+        // model.StatusMessage = statusCode switch
+        //                       {
+        //                           UserServiceStatusCodes.OK => new StatusMessageModel("Письмо отправлено."),
+        //                           UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
+        //                                true),
+        //                           UserServiceStatusCodes.NotValid =>
+        //                               new StatusMessageModel("Произошла ошибка при отправке письма", true),
+        //                           _ => model.StatusMessage
+        //                       };
+         await userService.SendPasswordRecoveryEmail(model);
+         model.StatusMessage =
+             new StatusMessageModel(
+                                    $"Письмо для восстановления пароля отправлено на почту {email}." +
+                                    $" Обычно письмо приходит в течение 10 минут." +
+                                    $" Если письмо не пришло, проверьте папку \"Спам\" или запросите письмо повторно.");
+
         return RedirectToAction("SendPasswordRecoveryEmail", model.StatusMessage);
     }
 
@@ -614,7 +625,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
 
         request.RelationType = UserRelationTypes.Friend;
         var (users, count) = await userService.GetUsersPagedSortedFiltered(request);
-        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false, isNeedToFilterRoles: false);
         return View($"RelatedUsers/{nameof(FriendList)}", model);
     }
 
@@ -628,7 +639,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
 
         request.RelationType = UserRelationTypes.IncomingFriendRequest;
         var (users, count) = await userService.GetUsersPagedSortedFiltered(request);
-        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false, isNeedToFilterRoles: false);
         return View($"RelatedUsers/{nameof(IncomingFriendRequests)}", model);
     }
 
@@ -642,7 +653,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
 
         request.RelationType = UserRelationTypes.OutgoingFriendRequest;
         var (users, count) = await userService.GetUsersPagedSortedFiltered(request);
-        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false, isNeedToFilterRoles: false);
         return View($"RelatedUsers/{nameof(OutgoingFriendRequests)}", model);
     }
 
@@ -694,7 +705,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
                 await userService.GetUsersPagedSortedFilteredByMultipleRelationTypes(relationTypes, request);
         }
 
-        var model = new FindUsersViewModel(users, count, request, Roles);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRoles: false);
         return View($"RelatedUsers/{nameof(FindFriends)}", model);
     }
 

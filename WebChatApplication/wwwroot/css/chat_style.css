@@ -1,0 +1,91 @@
+﻿.receiver-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: 20px;
+    height: 70px;
+    background-color: #e6e6e6;
+}
+
+.messages-box {
+    display: flex;
+    flex-direction: column;
+    background-color: #e6e6e6;
+    height: 75vh;
+    overflow-y: auto;
+    max-height: 800px;
+    padding: 20px;
+}
+
+.profile-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 100%;
+}
+
+.profile-img-container {
+    margin-bottom: auto;
+}
+
+.message {
+    display: flex;
+    padding: 15px;
+    background-color: #e6e6e6;
+    border-radius: 15px;
+    margin: 5px 1px;
+    max-width: 75%;
+}
+
+.message-content {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    margin-left: 10px;
+}
+
+.message-username {
+    color: darkblue;
+    text-decoration: none;
+}
+
+.sent-message {
+    background-color: #effdde;
+    width: 100%;
+    align-self: start;
+}
+
+.received-message {
+    background-color: #ffffff;
+    width: 100%;
+    align-self: start;
+}
+
+.sent-at-span {
+    margin-left: auto;
+    margin-top: auto;
+    align-self: center;
+}
+
+.send-message-box {
+    display: flex;
+    margin-top: 20px;
+}
+
+.message-field {
+    flex: 1;
+    border: none;
+    border-radius: 20px;
+    background-color: #e6e6e6;
+    padding: 10px;
+}
+
+.message-field:focus {
+    outline: none;
+}
+
+.send-btn {
+    width: 20%;
+    margin-left: 10px;
+    border-radius: 20px;
+}

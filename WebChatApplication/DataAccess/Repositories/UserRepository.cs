@@ -93,10 +93,7 @@ public class UserRepository : IUserRepository
             }
         }
 
-        if (role is not null)
-        {
-            usersQuery = usersQuery.Where(x => x.Role.Id == role);
-        }
+        usersQuery = FilterByRole(role, usersQuery);
 
 
         usersQuery = SortUsers(sortOrder, usersQuery);
@@ -105,8 +102,20 @@ public class UserRepository : IUserRepository
         var items = await usersQuery.ToListAsync();
 
         return (items, count);
+
+       
     }
 
+    private static IQueryable<UserEntity> FilterByRole(int? roleId, IQueryable<UserEntity> usersQuery)
+    {
+        if (roleId is not null)
+        {
+            usersQuery = usersQuery.Where(x => x.Role.Id == roleId);
+        }
+
+        return usersQuery;
+    }
+    
     private static IQueryable<UserEntity> FilterUsersByUsername(string? username, IQueryable<UserEntity> usersQuery)
     {
         if (!string.IsNullOrEmpty(username))
@@ -153,11 +162,13 @@ public class UserRepository : IUserRepository
         List<UserRelationTypes> relationTypes,
         string? currentUsername,
         string? username,
+        int? roleId,
         UserSortState sortOrder)
     {
         var usersQuery = GetUsersQueryable().AsQueryable();
 
         usersQuery = FilterUsersByUsername(username, usersQuery);
+        usersQuery = FilterByRole(roleId, usersQuery);
         if (!string.IsNullOrEmpty(currentUsername))
         {
             usersQuery = usersQuery.Where(x => x.Username != currentUsername);
@@ -165,12 +176,24 @@ public class UserRepository : IUserRepository
             var currentUser = await GetByEmailOrUsername(currentUsername);
             if (currentUser is not null && relationTypes.Count > 0)
             {
-                var relatedUsers = currentUser
-                                   .RelatedUsers
-                                   .Where(x => relationTypes.Contains(x.RelationType))
-                                   .Select(relation => relation.ToUser)
-                                   .ToList();
-                usersQuery = usersQuery.Where(x => relatedUsers.Contains(x));
+               
+                if (relationTypes.Contains(UserRelationTypes.NotRelated))
+                {
+                    var relatedUsers = currentUser
+                                       .RelatedUsers
+                                       .Select(relation => relation.ToUser)
+                                       .ToList();
+                    usersQuery = usersQuery.Where(x => !relatedUsers.Contains(x));
+                }
+                else
+                {
+                    var relatedUsers = currentUser
+                                       .RelatedUsers
+                                       .Where(x => relationTypes.Contains(x.RelationType))
+                                       .Select(relation => relation.ToUser)
+                                       .ToList();
+                    usersQuery = usersQuery.Where(x => relatedUsers.Contains(x));
+                }
             }
         }
 

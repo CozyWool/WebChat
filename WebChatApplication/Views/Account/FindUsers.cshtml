@@ -30,7 +30,7 @@
             <label>@Html.DisplayNameFor(m => m.FilterViewModel.SelectedRelationType)</label>
         </div>
     }
-    @if (Model.FilterViewModel.IsNeedToFilterRoles)
+    @if (Model.FilterViewModel.IsNeedToFilterRoles || User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
     {
         <div class="form-floating mb-2">
             <select name="role" asp-items="@Model.FilterViewModel.Roles"

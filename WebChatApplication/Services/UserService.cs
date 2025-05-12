@@ -216,18 +216,6 @@ public class UserService : IUserService
         return UserServiceStatusCodes.OK;
     }
 
-    // public async Task<UserServiceStatusCodes> ReAuthenticate(string? emailOrUsername)
-    // {
-    //     var user = await _userRepository.GetByEmailOrUsername(emailOrUsername);
-    //     if (user is null)
-    //     {
-    //         return UserServiceStatusCodes.NotFound;
-    //     }
-    //
-    //     await Authenticate(user, _httpContextAccessor.HttpContext.User.HasClaim("RememberMe", true.ToString()));
-    //     return UserServiceStatusCodes.OK;
-    // }
-
     public async Task<ProfileInfoModel?> GetUserProfile(string profileUsername)
     {
         var profileUser = await _userRepository.GetByEmailOrUsername(profileUsername);
@@ -285,6 +273,17 @@ public class UserService : IUserService
         return true;
     }
 
+    public async Task<UserCardModel?> GetUserCardById(Guid id)
+    {
+        var user = await _userRepository.GetById(id);
+        if (user is null)
+        {
+            return null;
+        }
+
+        return _mapper.Map<UserCardModel>(user);
+    }
+
     public async Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFiltered(
         FindUsersRequest request)
     {
@@ -294,15 +293,12 @@ public class UserService : IUserService
                                                                                sortOrder: request.SortOrder,
                                                                                username: request.Username,
                                                                                relationType: request.RelationType,
-                                                                               role: request.Role,
+                                                                               role: request.RoleId,
                                                                                currentUsername: currentUser?.Username);
+        
+        var mappedUsers = _mapper.Map<List<UserCardModel>>(users);
 
-
-        var items = FillUserAndRelationTypeRecordsList(users, currentUser);
-
-        var mappedItems = _mapper.Map<List<UserCardModel>>(items);
-
-        return (mappedItems, count);
+        return (mappedUsers, count);
     }
 
     public async Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFilteredByMultipleRoles(
@@ -317,35 +313,10 @@ public class UserService : IUserService
                                   currentUser?.Username,
                                   request.Username,
                                   request.SortOrder);
+        
+        var mappedUsers = _mapper.Map<List<UserCardModel>>(users);
 
-
-        var items = FillUserAndRelationTypeRecordsList(users, currentUser);
-
-        var mappedItems = _mapper.Map<List<UserCardModel>>(items);
-
-        return (mappedItems, count);
-    }
-
-    private static List<UserAndRelationTypeRecord> FillUserAndRelationTypeRecordsList(
-        List<UserEntity> users, UserEntity? currentUser)
-    {
-        var items = new List<UserAndRelationTypeRecord>();
-        foreach (var user in users)
-        {
-            var item = new UserAndRelationTypeRecord(user, UserRelationTypes.NotRelated);
-            if (currentUser is not null)
-            {
-                var relatedUser = currentUser.RelatedUsers.FirstOrDefault(x => x.ToUser.Username == user.Username);
-                if (relatedUser is not null)
-                {
-                    item.RelationType = relatedUser.RelationType;
-                }
-            }
-
-            items.Add(item);
-        }
-
-        return items;
+        return (mappedUsers, count);
     }
 
     public async Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFilteredByMultipleRelationTypes(
@@ -360,40 +331,13 @@ public class UserService : IUserService
                  relationTypes,
                  currentUser?.Username,
                  request.Username,
+                 request.RoleId,
                  request.SortOrder);
 
+        var mappedUsers = _mapper.Map<List<UserCardModel>>(users);
 
-        var items = FillUserAndRelationTypeRecordsList(users, currentUser);
-
-
-        var mappedItems = _mapper.Map<List<UserCardModel>>(items);
-
-        return (mappedItems, count);
+        return (mappedUsers, count);
     }
-
-    // public async Task<List<UserCardModel>> GetUserCards(string username, UserRelationTypes? relationType = null)
-    // {
-    //     var currentUser = await _userRepository.GetByEmailOrUsername(username);
-    //     if (currentUser is null)
-    //     {
-    //         return [];
-    //     }
-    //
-    //     var query = currentUser.RelatedUsers.AsQueryable();
-    //     if (relationType is not null)
-    //     {
-    //         query = query.Where(x => x.RelationType == relationType);
-    //     }
-    //
-    //     var items = query
-    //                 .Select(x => new UserAndRelationTypeRecord(x.ToUser, x.RelationType))
-    //                 .ToList();
-    //
-    //     var mappedItems = _mapper.Map<List<UserCardModel>>(items);
-    //
-    //     return mappedItems;
-    // }
-
 
     public async Task<string> GetProfilePictureUrl(string username)
     {

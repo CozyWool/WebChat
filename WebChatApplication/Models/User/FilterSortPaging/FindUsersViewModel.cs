@@ -24,7 +24,7 @@ public class FindUsersViewModel(
     public UserFilterViewModel FilterViewModel { get; set; } =
         new(request.Username,
             request.RelationType,
-            request.Role,
+            request.RoleId,
             roles,
             isNeedToFilterRelationTypes,
             isNeedToFilterRoles);
