@@ -11,22 +11,8 @@ public class UserProfile : Profile
     public UserProfile()
     {
         CreateMap<UserEntity, UserCardModel>().AfterMap<UserEntityToUserCardModelMappingAction>();
-        CreateMap<UserAndRelationTypeRecord, UserCardModel>().AfterMap<UserAndRelationTypeRecordToUserCardModelMappingAction>();
     }
-
-    private class UserAndRelationTypeRecordToUserCardModelMappingAction(IUserService userService)
-        : IMappingAction<UserAndRelationTypeRecord, UserCardModel>
-    {
-        public void Process(UserAndRelationTypeRecord source, UserCardModel destination, ResolutionContext context)
-        {
-            destination.ProfilePictureUrl = userService.GetProfilePictureUrl(source.ToUser.Username).Result;
-            destination.UserId = source.ToUser.Id;
-            destination.Username = source.ToUser.Username;
-            destination.LastActivityAt = source.ToUser.LastActivityAt;
-            destination.IsOnline = userService.IsOnline(source.ToUser.LastActivityAt);
-        }
-    }
-    private class UserEntityToUserCardModelMappingAction(IUserService userService)
+    private class UserEntityToUserCardModelMappingAction(IUserService userService, ICurrentUserService currentUserService)
         : IMappingAction<UserEntity, UserCardModel>
     {
         public void Process(UserEntity source, UserCardModel destination, ResolutionContext context)
@@ -36,6 +22,15 @@ public class UserProfile : Profile
             destination.Username = source.Username;
             destination.LastActivityAt = source.LastActivityAt;
             destination.IsOnline = userService.IsOnline(source.LastActivityAt);
+            destination.RelationType = UserRelationTypes.NotRelated;
+         
+            var currentUser =  currentUserService.GetCurrentUser().Result;
+            var relatedUser = currentUser?.RelatedUsers
+                                         .FirstOrDefault(x => x.ToUser.Username == source.Username);
+            if (relatedUser is not null)
+            {
+                destination.RelationType = relatedUser.RelationType;
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ public class ChangeProfileInfoModel
 {
     public StatusMessageModel StatusMessage { get; set; } = new();
 
+    // TODO: наложить ограничения 
     [Display(Name = "Имя пользователя")] public string Username { get; set; }
     [Display(Name = "Роль")] public string RoleName { get; set; }
     public string OldUsername { get; set; }

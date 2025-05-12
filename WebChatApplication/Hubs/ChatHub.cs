@@ -2,6 +2,7 @@
 using WebChatApplication.DataAccess.Contexts;
 using WebChatApplication.DataAccess.Entities;
 using WebChatApplication.Models;
+using WebChatApplication.Models.User;
 using WebChatApplication.Services;
 
 namespace WebChatApplication.Hubs;
@@ -12,14 +13,16 @@ public class ChatHub : Hub
     private readonly ICurrentUserService _currentUserService;
     private readonly ApplicationDbContext _context;
 
-    public ChatHub(IChatService chatService, ICurrentUserService currentUserService, ApplicationDbContext context)
+    public ChatHub(IChatService chatService,
+                   ICurrentUserService currentUserService,
+                   ApplicationDbContext context)
     {
         _chatService = chatService;
         _currentUserService = currentUserService;
         _context = context;
     }
 
-    public async Task SendMessage(Guid chatId, string message)
+    public async Task SendMessage(Guid chatId, string content)
     {
         var sentAt = DateTime.UtcNow;
 
@@ -29,16 +32,18 @@ public class ChatHub : Hub
         {
             return;
         }
-
+        var currentUserCard = chat.CurrentUser;
+        
         List<string> userIds = [];
         switch (chat)
         {
             case PrivateChatModel privateChat:
-                userIds = [privateChat.CurrentUser.UserId.ToString(), privateChat.PrivateUser.UserId.ToString()];
+                userIds = [privateChat.PrivateUser.UserId.ToString()];
                 break;
             case GroupChatModel groupChat:
                 userIds = groupChat
                           .Users
+                          .Where(x => x.Id != currentUserId.Value)
                           .Select(x => x.Id.ToString())
                           .ToList();
                 break;
@@ -49,11 +54,13 @@ public class ChatHub : Hub
                                 UserId = currentUserId.Value,
                                 ChatId = chatId,
                                 SentAt = sentAt,
-                                Content = message,
+                                Content = content,
                             };
         await _context.Messages.AddAsync(messageEntity);
         await _context.SaveChangesAsync();
-
-        await Clients.Users(userIds).SendAsync("ReceiveMessage", message, sentAt.ToString(), currentUserId);
+        await Clients.Users(userIds).SendAsync("ReceiveMessage",
+                                               content, 
+                                               sentAt.ToString(), 
+                                               currentUserCard);
     }
 }

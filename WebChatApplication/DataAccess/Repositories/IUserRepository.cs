@@ -24,6 +24,7 @@ public interface IUserRepository
         List<UserRelationTypes> relationTypes,
         string? currentUsername,
         string? username,
+        int? roleId,
         UserSortState sortOrder);
 
     Task<(List<UserEntity> items, int count)> GetUsersPagedSortedFilteredByMultipleRoles(
