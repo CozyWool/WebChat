@@ -37,16 +37,16 @@ public class ChatRepository : IChatRepository
         return await GetChatsQueryable().FirstOrDefaultAsync(c => c.Id == id);
     }
 
-    public async Task<Guid?> Create(ChatEntity? entity)
+    public async Task<ChatEntity?> Create(ChatEntity? entity)
     {
         if (entity is null)
         {
             return null;
         }
 
-        var chatId = _dbContext.Chats.Add(entity).Entity.Id;
+        var chat = _dbContext.Chats.Add(entity).Entity;
         await _dbContext.SaveChangesAsync();
-        return chatId;
+        return chat;
     }
 
     private IIncludableQueryable<ChatEntity, ICollection<MessageEntity>> GetChatsQueryable()

@@ -62,7 +62,7 @@ public class ChatService : IChatService
             return null;
         }
 
-        var chatId = currentUser.Chats.FirstOrDefault(x =>
+        var chat = currentUser.Chats.FirstOrDefault(x =>
                                                       {
                                                           if (x.Users.Count != 2 || x.ChatType != ChatTypes.Private)
                                                           {
@@ -70,27 +70,21 @@ public class ChatService : IChatService
                                                           }
 
                                                           return x.Users.FirstOrDefault(u => u.Id == userId) is not null;
-                                                      })?.Id;
-        if (chatId is null)
+                                                      });
+        if (chat is null)
         {
-            chatId = await CreatePrivateChat(userId);
-            if (chatId is null)
+            chat = await CreatePrivateChat(userId);
+            if (chat is null)
             {
                 return null;
             }
-        }
-
-        var chat = await _chatRepository.GetById(chatId.Value);
-        if (chat is null)
-        {
-            return null;
         }
 
         var model = _mapper.Map<PrivateChatModel>(chat);
         return model;
     }
 
-    public async Task<Guid?> CreatePrivateChat(Guid userId)
+    public async Task<ChatEntity?> CreatePrivateChat(Guid userId)
     {
         var currentUser = await _currentUserService.GetCurrentUser();
         var user = await _userRepository.GetById(userId);
@@ -106,8 +100,8 @@ public class ChatService : IChatService
                              CreatedAt = DateTime.UtcNow,
                              Users = [currentUser, user],
                          };
-        var chatId = await _chatRepository.Create(chatEntity);
-        return chatId;
+        var chat = await _chatRepository.Create(chatEntity);
+        return chat;
     }
 
     public async Task<Guid?> CreateGroupChat(List<Guid> userIds)
