@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Security.Claims;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebChatApplication.Enums;
@@ -16,7 +17,10 @@ using WebChatApplication.Services;
 namespace WebChatApplication.Controllers;
 
 [Route("account")]
-public class AccountController(IUserService userService, IRoleService roleService) : Controller
+public class AccountController(
+    IUserService userService,
+    IRoleService roleService,
+    IBackgroundJobClient backgroundJobClient) : Controller
 {
     private List<RoleModel> Roles => roleService.GetAll().Result;
 
@@ -52,7 +56,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
         //                         _ => new StatusMessageModel("Произошла ошибка при отправке письма на электронную почту",
         //                                                     true)
         //                     };
-        await userService.SendConfirmationEmail(model);
+        backgroundJobClient.Enqueue(() => userService.SendConfirmationEmail(model));
         var statusMessage = new StatusMessageModel($"Письмо для подтверждения аккаунта отправлено на почту {email}." +
                                                    $" Обычно письмо приходит в течение 10 минут." +
                                                    $" Если письмо не пришло, проверьте папку \"Спам\" или запросите письмо повторно.");
@@ -271,7 +275,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
                                   UserServiceStatusCodes.AlreadyExist =>
                                       new StatusMessageModel("Имя пользователя уже используется", true),
                                   UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                                       true),
+                                   true),
                                   _ => model.StatusMessage
                               };
 
@@ -371,7 +375,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
                               {
                                   UserServiceStatusCodes.OK => new StatusMessageModel("Пароль успешно обновлён"),
                                   UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                                       true),
+                                   true),
                                   UserServiceStatusCodes.NotValid =>
                                       new StatusMessageModel("Текущий пароль введён неверно", true),
                                   UserServiceStatusCodes.AlreadyExist => new
@@ -447,22 +451,12 @@ public class AccountController(IUserService userService, IRoleService roleServic
         model.PasswordRecoveryToken = passwordRecoveryToken;
         model.PasswordRecoveryUrl = passwordRecoveryUrl;
 
-        // var statusCode = await userService.SendPasswordRecoveryEmail(model);
-        // model.StatusMessage = statusCode switch
-        //                       {
-        //                           UserServiceStatusCodes.OK => new StatusMessageModel("Письмо отправлено."),
-        //                           UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-        //                                true),
-        //                           UserServiceStatusCodes.NotValid =>
-        //                               new StatusMessageModel("Произошла ошибка при отправке письма", true),
-        //                           _ => model.StatusMessage
-        //                       };
-         await userService.SendPasswordRecoveryEmail(model);
-         model.StatusMessage =
-             new StatusMessageModel(
-                                    $"Письмо для восстановления пароля отправлено на почту {email}." +
-                                    $" Обычно письмо приходит в течение 10 минут." +
-                                    $" Если письмо не пришло, проверьте папку \"Спам\" или запросите письмо повторно.");
+        backgroundJobClient.Enqueue(() => userService.SendPasswordRecoveryEmail(model));
+        model.StatusMessage =
+            new StatusMessageModel(
+                                   $"Письмо для восстановления пароля отправлено на почту {email}." +
+                                   $" Обычно письмо приходит в течение 10 минут." +
+                                   $" Если письмо не пришло, проверьте папку \"Спам\" или запросите письмо повторно.");
 
         return RedirectToAction("SendPasswordRecoveryEmail", model.StatusMessage);
     }
@@ -493,9 +487,9 @@ public class AccountController(IUserService userService, IRoleService roleServic
                                   UserServiceStatusCodes.AccountBanned =>
                                       new StatusMessageModel("Пользователь заблокирован", true),
                                   UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён",
-                                       true),
+                                   true),
                                   UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                                       true),
+                                   true),
                                   UserServiceStatusCodes.NotValid => new
                                       StatusMessageModel("Произошла ошибка при восстановлении пароля",
                                                          true),
@@ -521,6 +515,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
         {
             ModelState.AddModelError("", "Выйдите из аккаунта");
         }
+
         if (!ModelState.IsValid)
         {
             return View($"PasswordRecovery/{nameof(RecoverPassword)}", model);
@@ -535,9 +530,9 @@ public class AccountController(IUserService userService, IRoleService roleServic
                                   UserServiceStatusCodes.AccountBanned =>
                                       new StatusMessageModel("Пользователь заблокирован", true),
                                   UserServiceStatusCodes.AccountDeleted => new StatusMessageModel("Пользователь удалён",
-                                       true),
+                                   true),
                                   UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден",
-                                       true),
+                                   true),
                                   UserServiceStatusCodes.NotValid => new
                                       StatusMessageModel("Произошла ошибка при восстановлении пароля",
                                                          true),
@@ -625,7 +620,8 @@ public class AccountController(IUserService userService, IRoleService roleServic
 
         request.RelationType = UserRelationTypes.Friend;
         var (users, count) = await userService.GetUsersPagedSortedFiltered(request);
-        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false, isNeedToFilterRoles: false);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false,
+                                           isNeedToFilterRoles: false);
         return View($"RelatedUsers/{nameof(FriendList)}", model);
     }
 
@@ -639,7 +635,8 @@ public class AccountController(IUserService userService, IRoleService roleServic
 
         request.RelationType = UserRelationTypes.IncomingFriendRequest;
         var (users, count) = await userService.GetUsersPagedSortedFiltered(request);
-        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false, isNeedToFilterRoles: false);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false,
+                                           isNeedToFilterRoles: false);
         return View($"RelatedUsers/{nameof(IncomingFriendRequests)}", model);
     }
 
@@ -653,7 +650,8 @@ public class AccountController(IUserService userService, IRoleService roleServic
 
         request.RelationType = UserRelationTypes.OutgoingFriendRequest;
         var (users, count) = await userService.GetUsersPagedSortedFiltered(request);
-        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false, isNeedToFilterRoles: false);
+        var model = new FindUsersViewModel(users, count, request, Roles, isNeedToFilterRelationTypes: false,
+                                           isNeedToFilterRoles: false);
         return View($"RelatedUsers/{nameof(OutgoingFriendRequests)}", model);
     }
 
@@ -666,8 +664,8 @@ public class AccountController(IUserService userService, IRoleService roleServic
 
         var (users, count) =
             await userService.GetUsersPagedSortedFilteredByMultipleRelationTypes(
-                 [UserRelationTypes.Blacklisted, UserRelationTypes.BlacklistedBothWays],
-                 request);
+             [UserRelationTypes.Blacklisted, UserRelationTypes.BlacklistedBothWays],
+             request);
 
         var model = new FindUsersViewModel(users,
                                            count,
@@ -750,7 +748,7 @@ public class AccountController(IUserService userService, IRoleService roleServic
                                 UserServiceStatusCodes.OK =>
                                     new StatusMessageModel("Пользователь успешно разблокирован."),
                                 UserServiceStatusCodes.NotFound => new StatusMessageModel("Пользователь не найден.",
-                                     true),
+                                 true),
                                 UserServiceStatusCodes.NotValid => new
                                     StatusMessageModel("Пользователь не заблокирован.",
                                                        true),

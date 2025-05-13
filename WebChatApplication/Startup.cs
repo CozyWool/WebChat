@@ -1,3 +1,5 @@
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using WebChatApplication.DataAccess.Contexts;
@@ -20,7 +22,7 @@ public class Startup(IConfiguration configuration)
         services.AddDbContext<ApplicationDbContext>(options =>
                                                     {
                                                         options.UseNpgsql(configuration
-                                                                              .GetConnectionString("DefaultConnection"));
+                                                                              .GetConnectionString("WebchatConnection"));
                                                     });
 
         services.AddScoped<IUserRelationRepository, UserRelationRepository>();
@@ -41,6 +43,16 @@ public class Startup(IConfiguration configuration)
 
         services.AddMinio(configuration);
         services.AddScoped<IS3Service, S3Service>();
+
+        services.AddHangfire(globalConfiguration => globalConfiguration
+                                                    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                                                    .UseSimpleAssemblyNameTypeSerializer()
+                                                    .UseRecommendedSerializerSettings()
+                                                    .UsePostgreSqlStorage(c =>
+                                                                              c.UseNpgsqlConnection(
+                                                                               configuration
+                                                                                   .GetConnectionString("HangfireConnection"))));
+        services.AddHangfireServer();
 
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
@@ -63,7 +75,7 @@ public class Startup(IConfiguration configuration)
 
         app.UseStaticFiles();
         app.UseRouting();
-        
+
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -74,6 +86,10 @@ public class Startup(IConfiguration configuration)
                              endpoints.MapControllerRoute("default",
                                                           "{controller=WebChat}/{action=Index}/{id?}");
                              endpoints.MapHub<ChatHub>("/chatHub");
+                             if (env.IsDevelopment())
+                             {
+                                 endpoints.MapHangfireDashboard();
+                             }
                          });
     }
 }
