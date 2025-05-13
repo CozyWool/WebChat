@@ -13,6 +13,23 @@
                 <img src="@Model.PrivateUser.ProfilePictureUrl" class="profile-img" alt="..."></a>
         </div>
         <h4 class="ms-4 mt-auto mb-auto">@Model.PrivateUser.Username</h4>
+        <div class="ms-auto">
+            @if (Model.PrivateUser.IsOnline)
+            {
+                <span class="mb-0"><i class="online-status"></i> Онлайн</span>
+            }
+            else if (Model.PrivateUser.LastActivityAt is not null)
+            {
+                <span class="mb-0">
+                    <i class="offline-status"></i> Был(а) в сети:
+                    <date-humanizer utc-date-time="@Model.PrivateUser.LastActivityAt"/>
+                </span>
+            }
+            else
+            {
+                <span class="mb-0"><i class="never-online-status"></i> Не был(а) в сети</span>
+            }
+        </div>
     </div>
 
     <div class="messages-box">
