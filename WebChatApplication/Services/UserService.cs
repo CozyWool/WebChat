@@ -49,7 +49,7 @@ public class UserService : IUserService
         _roleService = roleService;
         _bucketId = _configuration.GetSection("MinioConfiguration").Get<MinioConfiguration>().BucketId;
 
-        if (!_httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
+        if (_httpContextAccessor.HttpContext == null || !_httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
         {
             return;
         }
