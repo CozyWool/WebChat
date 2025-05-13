@@ -30,9 +30,14 @@ public class WebChatController : Controller
     public async Task<IActionResult> PrivateChat(Guid userId)
     {
         ViewData["Title"] = "Чаты";
-    
+
         var model = await _chatService.GetPrivateChatByUserId(userId);
-        
+        if (model is null)
+        {
+            return View("_ShowStatusMessageWithButtons",
+                        new StatusMessageModel("Произошла ошибка при открытии чата", true));
+        }
+
         return View(model);
     }
 }

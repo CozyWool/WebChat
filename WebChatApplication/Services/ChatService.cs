@@ -56,7 +56,21 @@ public class ChatService : IChatService
             return null;
         }
 
-        var chatId = currentUser.Chats.FirstOrDefault(x => x.Users.Any(u => u.Id == userId))?.Id;
+        var relationToUser = currentUser.RelatedUsers.FirstOrDefault(x => x.ToUserId == userId);
+        if (relationToUser?.RelationType is not UserRelationTypes.Friend)
+        {
+            return null;
+        }
+
+        var chatId = currentUser.Chats.FirstOrDefault(x =>
+                                                      {
+                                                          if (x.Users.Count != 2 || x.ChatType != ChatTypes.Private)
+                                                          {
+                                                              return false;
+                                                          }
+
+                                                          return x.Users.FirstOrDefault(u => u.Id == userId) is not null;
+                                                      })?.Id;
         if (chatId is null)
         {
             chatId = await CreatePrivateChat(userId);
