@@ -24,6 +24,7 @@ public interface IUserService
     Task<UserServiceStatusCodes> VerifyPasswordRecoveryToken(string email, string token);
     Task<ProfileInfoModel?> GetUserProfile(string profileUsername);
     Task<string> GetProfilePictureUrl(string username);
+    Task<string> GetProfilePictureUrlByFilename(string username, string? filename);
     Task<bool> DeleteProfilePicture(string username);
     Task<UserCardModel?> GetUserCardById(Guid id);
     Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFiltered(FindUsersRequest request);

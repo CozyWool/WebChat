@@ -355,6 +355,16 @@ public class UserService : IUserService
 
         return url;
     }
+    public async Task<string> GetProfilePictureUrlByFilename(string username, string? filename)
+    {
+        var url = await _s3Service.GetUrl(_bucketId, filename);
+        if (string.IsNullOrEmpty(url))
+        {
+            url = $"https://ui-avatars.com/api/?name={username}&size=200p";
+        }
+
+        return url;
+    }
 
     public async Task<UserServiceStatusCodes> UpdateLastActivity(string username)
     {
