@@ -22,7 +22,12 @@ public class ChatHub : Hub
         _context = context;
     }
 
-    public async Task SendMessage(Guid chatId, string content)
+    public async Task JoinChat(Guid chatId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, chatId.ToString());
+    }
+
+    public async Task SendMessage(Guid chatId, string content, Guid messageId)
     {
         var sentAt = DateTime.UtcNow;
 
@@ -32,25 +37,12 @@ public class ChatHub : Hub
         {
             return;
         }
+
         var currentUserCard = chat.CurrentUser;
-        
-        List<string> userIds = [];
-        switch (chat)
-        {
-            case PrivateChatModel privateChat:
-                userIds = [privateChat.PrivateUser.UserId.ToString()];
-                break;
-            case GroupChatModel groupChat:
-                userIds = groupChat
-                          .Users
-                          .Where(x => x.Id != currentUserId.Value)
-                          .Select(x => x.Id.ToString())
-                          .ToList();
-                break;
-        }
 
         var messageEntity = new MessageEntity
                             {
+                                Id = messageId,
                                 UserId = currentUserId.Value,
                                 ChatId = chatId,
                                 SentAt = sentAt,
@@ -58,9 +50,10 @@ public class ChatHub : Hub
                             };
         await _context.Messages.AddAsync(messageEntity);
         await _context.SaveChangesAsync();
-        await Clients.Users(userIds).SendAsync("ReceiveMessage",
-                                               content, 
-                                               sentAt.ToString(), 
-                                               currentUserCard);
+        await Clients.OthersInGroup(groupName: chatId.ToString()).SendAsync("ReceiveMessage",
+                                                                            content,
+                                                                            messageId,
+                                                                            sentAt.ToString(),
+                                                                            currentUserCard);
     }
 }
