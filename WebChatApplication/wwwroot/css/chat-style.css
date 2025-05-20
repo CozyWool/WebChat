@@ -31,9 +31,9 @@
 .message {
     display: flex;
     padding: 15px;
-    background-color: #e6e6e6;
     border-radius: 15px;
     margin: 5px 1px;
+    width: auto;
     max-width: 75%;
 }
 
@@ -51,20 +51,30 @@
 
 .sent-message {
     background-color: #effdde;
-    width: 100%;
-    align-self: start;
+    align-self: end;
 }
 
 .received-message {
     background-color: #ffffff;
-    width: 100%;
     align-self: start;
 }
 
 .sent-at-span {
-    margin-left: auto;
-    margin-top: auto;
+    padding-left: 25px;
+    float:right;
     align-self: center;
+    color: gray;
+    white-space: nowrap;
+}
+
+.reply-span {
+    float: right;
+    margin-left: 10px;
+    color: gray;
+}
+
+.reply-span:hover {
+    text-decoration: underline;
 }
 
 .send-message-box {
@@ -89,3 +99,4 @@
     margin-left: 10px;
     border-radius: 20px;
 }
+

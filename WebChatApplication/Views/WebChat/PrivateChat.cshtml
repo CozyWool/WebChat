@@ -35,7 +35,8 @@
     <div class="messages-box">
         @foreach (var message in Model.Messages)
         {
-            <div class="message @(message.IsCurrentUserSentMessage ? "sent-message" : "received-message")">
+            <div class="message @(message.IsCurrentUserSentMessage ? "sent-message" : "received-message")"
+                 id="@message.Id">
                 <div class="profile-img-container">
                     <a href="@Url.Action(
                                          "ProfileInfo",
@@ -46,16 +47,21 @@
                 </div>
 
                 <div class="message-content">
-                    <a href="@Url.Action(
-                                         "ProfileInfo",
-                                         "Account",
-                                         new {username = message.Author.Username},
-                                         Context.Request.Scheme)"
-                       class="message-username">
-                        <span>@message.Author.Username</span>
-                    </a>
-                    <span>@message.Content</span>
-                    <span class="date-utc-span sent-at-span">@message.SentAt.ToString()</span>
+                    <div>
+                        <a href="@Url.Action(
+                                             "ProfileInfo",
+                                             "Account",
+                                             new {username = message.Author.Username},
+                                             Context.Request.Scheme)"
+                           class="message-username">
+                            <span>@message.Author.Username</span>
+                        </a>
+                        <span class="reply-span">Ответить</span>
+                    </div>
+                    <div>
+                        <span>@message.Content</span>
+                        <span class="date-utc-span sent-at-span">@message.SentAt.ToString()</span>
+                    </div>
                 </div>
             </div>
         }
@@ -68,33 +74,185 @@
 
 </div>
 
+<style>
+    .menu {
+        width: 200px;
+        height: fit-content;
+        min-height: 150px;
+        background: white;
+        box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px,
+        rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+        border-radius: 2mm;
+        position: absolute;
+    }
+
+    .menu-list {
+        width: 100%;
+        height: fit-content;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .section {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        box-sizing: border-box;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .section:last-child {
+        border: none;
+    }
+
+    .item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+        padding: 10px 20px;
+        cursor: pointer;
+    }
+
+    .item:hover {
+        background: rgba(0, 0, 0, 0.07);
+    }
+
+    .name {
+        width: fit-content;
+        display: flex;
+        align-items: center;
+        font-size: 16px;
+    }
+
+    .name .icon {
+        margin-right: 10px;
+    }
+</style>
+<div>
+    <div class="menu">
+        <div class="menu-list">
+            <div class="section">
+                <div class="item" id="context-menu-reply-button">
+                    <div class="name">
+                        <i class="fa-solid fa-reply me-2"></i> Ответить
+                    </div>
+                </div>
+                <div class="item" id="context-menu-forward-button">
+                    <div class="name">
+                        <i class="fa-solid fa-share me-2"></i> Переслать
+                    </div>
+                </div>
+                <div class="item" id="context-menu-delete-button">
+                    <div class="name">
+                        <i class="fa-solid fa-trash me-2"></i> Удалить
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts{
+    <script>
+        let menu = $(".menu");
+        let contextMenuReplyButton = $("#context-menu-reply-button");
+        let contextMenuForwardButton = $("#context-menu-forward-button");
+        let contextMenuDeleteButton = $("#context-menu-delete-button");
+        let intiHeight = menu.offsetHeight;
+        let initWidth = menu.offsetWidth;
+        menu.style.display = "none";
+        document.querySelectorAll('.message').forEach(element => {
+            element.addEventListener("contextmenu", contextMenuEventHandler);
+        });
+
+        window.addEventListener("click", () => {
+            menu.style.display = "none";
+        });
+
+        function contextMenuEventHandler(e) {
+            e.preventDefault();
+            const clickedElement = $(e.currentTarget)
+            const parentElement = clickedElement.parent(".message");
+            const messageId = parentElement.prevObject.attr("id");
+            console.log("messageId: ", messageId)
+
+            openMenu(e, messageId);
+        }
+
+        function openMenu(e, messageId) {
+            let positionX = e.clientX;
+            let positionY = e.clientY;
+            let wHeight = window.innerHeight;
+            let wWidth = window.innerWidth;
+
+            let menuHeight = menu.offsetHeight || intiHeight;
+            let menuWidth = menu.offsetWidth || initWidth;
+
+            let availableHeight = wHeight - positionY;
+            let availableWidth = wWidth - positionX;
+
+            if (availableHeight >= menuHeight) {
+                menu.style.top = positionY + "px";
+                menu.style.bottom = "auto";
+            } else {
+                menu.style.bottom = wHeight - positionY + "px";
+                menu.style.top = "auto";
+                if (positionY < menuHeight) {
+                    menu.style.top = "0px";
+                    menu.style.bottom = "auto";
+                }
+            }
+
+            if (availableWidth >= menuWidth) {
+                menu.style.left = positionX + "px";
+                menu.style.right = "auto";
+            } else {
+                menu.style.right = wWidth - positionX + "px";
+                menu.style.left = "auto";
+            }
+            menu.style.display = "block";
+        }
+    </script>
+
     <script src="~/js/signalr.min.js"></script>
 
     <script>
-        const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+        const chatId = "@Model.Id";
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .withAutomaticReconnect()
+            .build();
+        const messagesBox = $(".messages-box");
 
         connection.start().then(function () {
+            connection.invoke("JoinChat", chatId)
             console.log("Connected!");
         }).catch(function (err) {
             console.error(err.toString())
         });
 
         function sendMessage() {
-            const chatId = "@Model.Id";
             const content = $(".message-field").val();
+            const messageId = generateRandomGuid();
 
             if (content === "") {
                 return;
             }
 
-            connection.invoke("SendMessage", chatId, content);
+            connection.invoke("SendMessage", chatId, content, messageId);
             const author = {
                 userId: "@Model.CurrentUser.UserId",
                 username: "@Model.CurrentUser.Username",
                 profilePictureUrl: "@Model.CurrentUser.ProfilePictureUrl"
             }
-            receiveMessage(content, "@DateTime.UtcNow", author);
+
+            receiveMessage(content, messageId, "@DateTime.UtcNow", author);
             $(".message-field").val("").focus();
         }
 
@@ -109,23 +267,22 @@
 
         connection.on("ReceiveMessage", receiveMessage);
 
-        function receiveMessage(content, sentAt, author) {
-            console.log("Received message", content, sentAt, author);
+        function receiveMessage(content, messageId, sentAt, author) {
+            content = $('<div />').text(content).html();
+            console.log("Received message", content, messageId, sentAt, author);
             let authorUsername = author.username;
             let authorProfilePictureUrl = author.profilePictureUrl;
             let authorProfileInfoUrl = `/account/profile-info?username=${author.username}`;
             let authorId = author.userId;
-
-
-            let _messageElement = ``;
-            let messageClass = ``;
+            let _messageElement;
+            let messageClass;
             if (authorId == "@Model.CurrentUser.UserId") {
                 messageClass = `sent-message`;
             } else {
                 messageClass = `received-message`;
             }
             _messageElement = `
-                <div class="message ${messageClass}">
+                <div class="message ${messageClass}" id="${messageId}">
                     <div class="profile-img-container">
                         <a href="${authorProfileInfoUrl}">
                             <img src="${authorProfilePictureUrl}" class="profile-img" alt="...">
@@ -133,24 +290,38 @@
                     </div>
 
                     <div class="message-content">
-                        <a href="${authorProfileInfoUrl}" class="message-username">
-                            <span>${authorUsername}</span>
-                        </a>
-                        <span>${content}</span>
-                        <span class="sent-at-span">${formatDateTime(toLocalTime(sentAt))}</span>
+                        <div>
+                            <a href="${authorProfileInfoUrl}" class="message-username">
+                                <span>${authorUsername}</span>
+                            </a>
+                            <span class="reply-span">Ответить</span>
+                        </div>
+                        <div>
+                            <span>${content}</span>
+                            <span class="sent-at-span">${formatDateTime(toLocalTime(sentAt))}</span>
+                        </div>
                     </div>
                 </div>`;
 
-            $(".messages-box").append(_messageElement);
+            messagesBox.append(_messageElement);
+            messagesBox[0].lastElementChild.addEventListener("contextmenu", contextMenuEventHandler);
+
             if (authorId == "@Model.CurrentUser.UserId") {
-                $(".messages-box").scrollTop($(".messages-box")[0].scrollHeight);
+                messagesBox.scrollTop(messagesBox[0].scrollHeight);
             }
         }
 
         $(goToLastMessage)
 
         function goToLastMessage() {
-            $(".messages-box").scrollTop($(".messages-box")[0].scrollHeight);
+            messagesBox.scrollTop(messagesBox[0].scrollHeight);
+        }
+
+        function generateRandomGuid() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
         }
 
     </script>
