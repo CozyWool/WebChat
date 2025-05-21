@@ -21,7 +21,7 @@ public class UserRepository : IUserRepository
                    .ToListAsync();
     }
 
-    private IIncludableQueryable<UserEntity, ICollection<UserActionEntity>> GetUsersQueryable()
+    private IQueryable<UserEntity> GetUsersQueryable()
     {
         return _dbContext
                .Users
@@ -29,7 +29,9 @@ public class UserRepository : IUserRepository
                .Include(e => e.RelatedUsers).ThenInclude(e => e.ToUser)
                .Include(e => e.Messages)
                .Include(e => e.Chats).ThenInclude(e => e.Users)
-               .Include(e => e.Actions);
+               .Include(e => e.Chats).ThenInclude(e => e.Messages).ThenInclude(e => e.ParentMessage)
+               .Include(e => e.Actions)
+               .AsSplitQuery();
     }
 
     public async Task<UserEntity?> GetById(Guid id)

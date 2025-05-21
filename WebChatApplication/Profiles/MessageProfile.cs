@@ -12,7 +12,7 @@ public class MessageProfile : Profile
 {
     public MessageProfile()
     {
-        CreateMap<MessageEntity, MessageModel>().AfterMap<MessageModelMappingAction>();
+        CreateMap<MessageEntity, MessageModel>().AfterMap<MessageModelMappingAction>().ReverseMap();
     }
 
     private class MessageModelMappingAction(ICurrentUserService currentUserService, IUserService userService)
@@ -26,8 +26,9 @@ public class MessageProfile : Profile
             destination.Author = new UserCardModel
                                  {
                                      Username = source.User.Username,
-                                     ProfilePictureUrl = userService.
-                                                         GetProfilePictureUrlByFilename(source.User.Username, source.User.ProfilePictureFileName)
+                                     ProfilePictureUrl = userService
+                                                         .GetProfilePictureUrlByFilename(source.User.Username,
+                                                          source.User.ProfilePictureFileName)
                                                          .Result
                                  };
         }

@@ -10,10 +10,12 @@ namespace WebChatApplication.Controllers;
 public class WebChatController : Controller
 {
     private readonly IChatService _chatService;
+    private readonly IMessageService _messageService;
 
-    public WebChatController(IChatService chatService)
+    public WebChatController(IChatService chatService, IMessageService messageService)
     {
         _chatService = chatService;
+        _messageService = messageService;
     }
 
     [AllowAnonymous]
@@ -39,5 +41,16 @@ public class WebChatController : Controller
         }
 
         return View(model);
+    }
+    
+    [HttpDelete("delete-message/{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        if (await _messageService.Delete(id))
+        {
+            return Ok();
+        }
+
+        return BadRequest();
     }
 }

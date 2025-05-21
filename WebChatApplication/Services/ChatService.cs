@@ -22,10 +22,10 @@ public class ChatService : IChatService
         _userRepository = userRepository;
     }
 
-    public async Task<ChatModel?> GetChatById(Guid chatId)
+    public async Task<ChatModel?> GetChatById(Guid chatId, int messageCount = 50)
     {
         var currentUser = await _currentUserService.GetCurrentUser();
-        var chat = await _chatRepository.GetById(chatId);
+        var chat = await _chatRepository.GetById(chatId, messageCount);
         if (currentUser is null || chat is null)
         {
             return null;

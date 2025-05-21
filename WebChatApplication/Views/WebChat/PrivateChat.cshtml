@@ -33,6 +33,7 @@
     </div>
 
     <div class="messages-box">
+        <span class="load-more-messages btn btn-dark">Загрузить больше сообщений</span>
         @foreach (var message in Model.Messages)
         {
             <div class="message @(message.IsCurrentUserSentMessage ? "sent-message" : "received-message")"
@@ -45,21 +46,31 @@
                                          Context.Request.Scheme)">
                         <img src="@message.Author.ProfilePictureUrl" class="profile-img" alt="..."></a>
                 </div>
-
-                <div class="message-content">
+                <div class="message-container">
                     <div>
                         <a href="@Url.Action(
                                              "ProfileInfo",
                                              "Account",
                                              new {username = message.Author.Username},
                                              Context.Request.Scheme)"
-                           class="message-username">
-                            <span>@message.Author.Username</span>
-                        </a>
-                        <span class="reply-span">Ответить</span>
+                           class="message-username">@message.Author.Username</a>
+                        <span class="reply-span" data-message-id="@message.Id">Ответить</span>
                     </div>
+                    @if (message.ParentMessage is not null)
+                    {
+                        <div class="reply quote-like quote-like-hoverable quote-like-border"
+                             data-parent-message-id="@message.ParentMessage.Id">
+                            <div class="c-ripple"></div>
+                            <div class="reply-content">
+                                <div class="reply-title">
+                                    <span>@message.ParentMessage.Author.Username</span>
+                                </div>
+                                <div class="reply-subtitle">@message.ParentMessage.Content</div>
+                            </div>
+                        </div>
+                    }
                     <div>
-                        <span>@message.Content</span>
+                        <span class="message-content">@message.Content</span>
                         <span class="date-utc-span sent-at-span">@message.SentAt.ToString()</span>
                     </div>
                 </div>
@@ -68,88 +79,92 @@
     </div>
 
     <div class="send-message-box">
+        <div class="reply quote-like quote-like-hoverable quote-like-border mb-2" id="send-message-reply-container">
+            <div class="c-ripple"></div>
+            <div class="reply-content" style="display: flex">
+                <div style="width: 95%;">
+                    <div class="reply-title">
+                        <span id="send-message-reply-title">В ответ </span>
+                    </div>
+                    <div class="reply-subtitle">
+                        <span id="send-message-reply-subtitle">Контент тут</span>
+                    </div>
+                </div>
+                <i id="send-message-close-reply-button" style="z-index: 2"
+                   class="fa-solid fa-xmark float-end ms-auto me-3 mt-auto mb-auto"></i>
+            </div>
+        </div>
+
         <textarea rows="4" class="message-field" placeholder="Сообщение..."></textarea>
         <button class="send-btn btn btn-dark">Отправить</button>
     </div>
-
 </div>
 
 <style>
-    .menu {
-        width: 200px;
-        height: fit-content;
-        min-height: 150px;
-        background: white;
-        box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px,
-        rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
-        border-radius: 2mm;
+    .c-ripple {
         position: absolute;
+        inset: 0;
     }
 
-    .menu-list {
-        width: 100%;
-        height: fit-content;
-        display: flex;
-        align-items: center;
-        flex-direction: column;
+    .reply-content {
+        padding: 3px 0;
+        padding-inline-end: .375rem;
+        margin-inline-start: .5rem;
+        display: block
     }
 
-    .section {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        box-sizing: border-box;
-        padding: 10px 0;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    .reply-title {
+        color: rgb(92, 168, 83);
     }
 
-    .section:last-child {
-        border: none;
+    .reply-subtitle {
+        font-size: 14px;
+        position: relative;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
     }
 
-    .item {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box;
-        padding: 10px 20px;
+    .quote-like {
+        background-color: rgba(64, 169, 32, .1);
+        overflow: hidden;
+        border-radius: .25rem;
+        position: relative
+    }
+
+    .quote-like-hoverable {
         cursor: pointer;
     }
 
-    .item:hover {
-        background: rgba(0, 0, 0, 0.07);
-    }
-
-    .name {
-        width: fit-content;
-        display: flex;
-        align-items: center;
-        font-size: 16px;
-    }
-
-    .name .icon {
-        margin-right: 10px;
+    .quote-like-border:before {
+        content: " ";
+        position: absolute;
+        inset-inline-start: 0;
+        top: 0;
+        bottom: 0;
+        flex: 0 0 auto;
+        width: .1875rem;
+        background: rgb(92, 168, 83);
+        z-index: 1;
     }
 </style>
+
 <div>
-    <div class="menu">
-        <div class="menu-list">
-            <div class="section">
-                <div class="item" id="context-menu-reply-button">
-                    <div class="name">
+    <div class="context-menu">
+        <div class="context-menu-list">
+            <div class="context-menu-section">
+                <div class="context-menu-item" id="context-menu-reply-button">
+                    <div class="context-menu-name">
                         <i class="fa-solid fa-reply me-2"></i> Ответить
                     </div>
                 </div>
-                <div class="item" id="context-menu-forward-button">
-                    <div class="name">
+                <div class="context-menu-item" id="context-menu-forward-button">
+                    <div class="context-menu-name">
                         <i class="fa-solid fa-share me-2"></i> Переслать
                     </div>
                 </div>
-                <div class="item" id="context-menu-delete-button">
-                    <div class="name">
+                <div class="context-menu-item" id="context-menu-delete-button">
+                    <div class="context-menu-name">
                         <i class="fa-solid fa-trash me-2"></i> Удалить
                     </div>
                 </div>
@@ -160,20 +175,54 @@
 
 @section Scripts{
     <script>
-        let menu = $(".menu");
-        let contextMenuReplyButton = $("#context-menu-reply-button");
-        let contextMenuForwardButton = $("#context-menu-forward-button");
-        let contextMenuDeleteButton = $("#context-menu-delete-button");
-        let intiHeight = menu.offsetHeight;
-        let initWidth = menu.offsetWidth;
-        menu.style.display = "none";
+        let contextMenu = document.querySelector(".context-menu");
+        let contextMenuReplyButton = document.querySelector("#context-menu-reply-button");
+        let contextMenuForwardButton = document.querySelector("#context-menu-forward-button");
+        let contextMenuDeleteButton = document.querySelector("#context-menu-delete-button");
+        let selectedMessage = null;
+
+        let sendMessageReplyContainer = document.querySelector("#send-message-reply-container");
+        let sendMessageReplyTitle = document.querySelector("#send-message-reply-title");
+        let sendMessageReplySubtitle = document.querySelector("#send-message-reply-subtitle");
+        sendMessageReplyContainer.style.display = "none";
+
+        let intiHeight = contextMenu.offsetHeight;
+        let initWidth = contextMenu.offsetWidth;
+        contextMenu.style.display = "none";
         document.querySelectorAll('.message').forEach(element => {
             element.addEventListener("contextmenu", contextMenuEventHandler);
         });
+        document.querySelectorAll('.reply-span').forEach(replySpanEventHandler);
+
+        contextMenuReplyButton.addEventListener("click", replyClick)
+        contextMenuForwardButton.addEventListener("click", forwardClick)
+        contextMenuDeleteButton.addEventListener("click", deleteClick)
+
 
         window.addEventListener("click", () => {
-            menu.style.display = "none";
+            contextMenu.style.display = "none";
         });
+        $("#send-message-close-reply-button").click(closeReplyBox);
+
+        function replySpanEventHandler(el) {
+            const messageId = el.dataset.messageId;
+            if (messageId) {
+                el.addEventListener("click", () => {
+                    let parentElement = el.parentElement.parentElement;
+                    selectedMessage = {
+                        id: messageId,
+                        authorUsername: parentElement.querySelector(".message-username").textContent,
+                        content: parentElement.querySelector(".message-content").textContent
+                    }
+                    replyClick()
+                });
+            }
+        }
+
+        function closeReplyBox() {
+            sendMessageReplyContainer.style.display = "none";
+            selectedMessage = null;
+        }
 
         function contextMenuEventHandler(e) {
             e.preventDefault();
@@ -181,42 +230,85 @@
             const parentElement = clickedElement.parent(".message");
             const messageId = parentElement.prevObject.attr("id");
             console.log("messageId: ", messageId)
+            selectedMessage = {
+                id: messageId,
+                authorUsername: parentElement.prevObject.find(".message-username")[0].textContent,
+                content: parentElement.prevObject.find(".message-content")[0].textContent
+            }
 
-            openMenu(e, messageId);
+            openMenu(e);
         }
 
-        function openMenu(e, messageId) {
+        function openMenu(e) {
             let positionX = e.clientX;
             let positionY = e.clientY;
             let wHeight = window.innerHeight;
             let wWidth = window.innerWidth;
 
-            let menuHeight = menu.offsetHeight || intiHeight;
-            let menuWidth = menu.offsetWidth || initWidth;
+            let menuHeight = contextMenu.offsetHeight || intiHeight;
+            let menuWidth = contextMenu.offsetWidth || initWidth;
 
             let availableHeight = wHeight - positionY;
             let availableWidth = wWidth - positionX;
 
             if (availableHeight >= menuHeight) {
-                menu.style.top = positionY + "px";
-                menu.style.bottom = "auto";
+                contextMenu.style.top = positionY + "px";
+                contextMenu.style.bottom = "auto";
             } else {
-                menu.style.bottom = wHeight - positionY + "px";
-                menu.style.top = "auto";
+                contextMenu.style.bottom = wHeight - positionY + "px";
+                contextMenu.style.top = "auto";
                 if (positionY < menuHeight) {
-                    menu.style.top = "0px";
-                    menu.style.bottom = "auto";
+                    contextMenu.style.top = "0px";
+                    contextMenu.style.bottom = "auto";
                 }
             }
 
             if (availableWidth >= menuWidth) {
-                menu.style.left = positionX + "px";
-                menu.style.right = "auto";
+                contextMenu.style.left = positionX + "px";
+                contextMenu.style.right = "auto";
             } else {
-                menu.style.right = wWidth - positionX + "px";
-                menu.style.left = "auto";
+                contextMenu.style.right = wWidth - positionX + "px";
+                contextMenu.style.left = "auto";
             }
-            menu.style.display = "block";
+            contextMenu.style.display = "block";
+        }
+
+        function replyClick() {
+            console.log("Reply button with id: ", selectedMessage.id);
+            sendMessageReplyTitle.innerHTML = `В ответ ${selectedMessage.authorUsername}`;
+            sendMessageReplySubtitle.innerHTML = selectedMessage.content;
+            sendMessageReplyContainer.style.display = "block";
+        }
+
+        function forwardClick() {
+            console.log("Forward button with id: ", selectedMessage.id);
+        }
+
+        async function deleteClick() {
+            try {
+                let confirmedDelete = confirm("Вы уверены, что хотите удалить это сообщение?")
+                if (!confirmedDelete) return
+                const response = await fetch(`/web-chat/delete-message/` + selectedMessage.id, {
+                    method: "DELETE",
+                    headers: {"Accept": "application/json", "Content-Type": "application/json"}
+                });
+                console.log(response);
+                if (response.ok) {
+                    deleteMessage(selectedMessage.id);
+                    connection.invoke("DeleteMessage", chatId, selectedMessage.id);
+                } else {
+                    alert('Произошла ошибка при удалении/Нет доступа');
+                }
+            } catch (error) {
+                console.log(error);
+                alert('Произошла ошибка при удалении/Нет доступа');
+            }
+            console.log("Delete button with id: ", selectedMessage.id);
+        }
+
+        function deleteMessage(messageId) {
+            const element = document.getElementById(messageId);
+            element.parentNode.removeChild(element);
         }
     </script>
 
@@ -224,40 +316,66 @@
 
     <script>
         const chatId = "@Model.Id";
+        const currentUserId = "@Model.CurrentUser.UserId";
+        const currentUsername = "@Model.CurrentUser.Username";
+        const currentUserProfilePictureUrl = "@Model.CurrentUser.ProfilePictureUrl";
+
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/chatHub")
             .withAutomaticReconnect()
             .build();
         const messagesBox = $(".messages-box");
+        const messageField = $(".message-field");
 
         connection.start().then(function () {
             connection.invoke("JoinChat", chatId)
             console.log("Connected!");
         }).catch(function (err) {
+            console.error(err)
             console.error(err.toString())
         });
 
         function sendMessage() {
-            const content = $(".message-field").val();
-            const messageId = generateRandomGuid();
+            try {
+                const content = messageField.val();
+                const messageId = generateRandomGuid();
 
-            if (content === "") {
-                return;
+                if (content === "") {
+                    return;
+                }
+
+                const message = {
+                    Id: messageId,
+                    SentAt: "@DateTime.UtcNow",
+                    Content: content,
+                    Author: {
+                        Id: currentUserId,
+                        Username: currentUsername,
+                        ProfilePictureUrl: currentUserProfilePictureUrl
+                    },
+                    ParentMessage: null
+                }
+
+                if (selectedMessage !== null) {
+                    message.ParentMessage = {
+                        Id: selectedMessage.id,
+                        Author: {
+                            Username: selectedMessage.authorUsername
+                        },
+                        Content: selectedMessage.content
+                    };
+                }
+                closeReplyBox();
+                connection.invoke("SendMessage", chatId, JSON.stringify(message));
+                receiveMessage(message);
+                messageField.val("").focus();
+            } catch (error) {
+                console.error(error);
             }
-
-            connection.invoke("SendMessage", chatId, content, messageId);
-            const author = {
-                userId: "@Model.CurrentUser.UserId",
-                username: "@Model.CurrentUser.Username",
-                profilePictureUrl: "@Model.CurrentUser.ProfilePictureUrl"
-            }
-
-            receiveMessage(content, messageId, "@DateTime.UtcNow", author);
-            $(".message-field").val("").focus();
         }
 
         $(".send-btn").click(sendMessage);
-        $(".message-field").keypress(function (e) {
+        messageField.keypress(function (e) {
             if (e.which === 13 && !e.shiftKey) {
                 e.preventDefault();
 
@@ -266,50 +384,28 @@
         });
 
         connection.on("ReceiveMessage", receiveMessage);
+        connection.on("DeleteMessage", deleteMessage);
 
-        function receiveMessage(content, messageId, sentAt, author) {
-            content = $('<div />').text(content).html();
-            console.log("Received message", content, messageId, sentAt, author);
-            let authorUsername = author.username;
-            let authorProfilePictureUrl = author.profilePictureUrl;
-            let authorProfileInfoUrl = `/account/profile-info?username=${author.username}`;
-            let authorId = author.userId;
-            let _messageElement;
-            let messageClass;
-            if (authorId == "@Model.CurrentUser.UserId") {
-                messageClass = `sent-message`;
-            } else {
-                messageClass = `received-message`;
-            }
-            _messageElement = `
-                <div class="message ${messageClass}" id="${messageId}">
-                    <div class="profile-img-container">
-                        <a href="${authorProfileInfoUrl}">
-                            <img src="${authorProfilePictureUrl}" class="profile-img" alt="...">
-                        </a>
-                    </div>
+        function receiveMessage(message) {
+            try {
+                if (typeof message === "string") {
+                    message = JSON.parse(message);
+                }
+                console.log("Received message", message);
+                let _messageElement = renderMessageElement(message);
 
-                    <div class="message-content">
-                        <div>
-                            <a href="${authorProfileInfoUrl}" class="message-username">
-                                <span>${authorUsername}</span>
-                            </a>
-                            <span class="reply-span">Ответить</span>
-                        </div>
-                        <div>
-                            <span>${content}</span>
-                            <span class="sent-at-span">${formatDateTime(toLocalTime(sentAt))}</span>
-                        </div>
-                    </div>
-                </div>`;
+                messagesBox.append(_messageElement);
+                messagesBox[0].lastElementChild.addEventListener("contextmenu", contextMenuEventHandler);
+                messagesBox[0].lastElementChild.querySelectorAll('.reply-span').forEach(replySpanEventHandler);
 
-            messagesBox.append(_messageElement);
-            messagesBox[0].lastElementChild.addEventListener("contextmenu", contextMenuEventHandler);
-
-            if (authorId == "@Model.CurrentUser.UserId") {
-                messagesBox.scrollTop(messagesBox[0].scrollHeight);
+                if (message.Author.Id == currentUserId) {
+                    messagesBox.scrollTop(messagesBox[0].scrollHeight);
+                }
+            } catch (error) {
+                console.error(error);
             }
         }
+
 
         $(goToLastMessage)
 
@@ -323,6 +419,56 @@
                 return v.toString(16);
             });
         }
+
+        function renderMessageElement(message) {
+            let content = $('<div />').text(message.Content).html();
+            let authorProfileInfoUrl = `/account/profile-info?username=${message.Author.Username}`;
+            let parentMessageElement = ``;
+            if (message.ParentMessage !== null) {
+                parentMessageElement = `<div class="reply quote-like quote-like-hoverable quote-like-border"
+                                             data-parent-message-id="${message.ParentMessage.Id}">
+                                            <div class="c-ripple"></div>
+                                            <div class="reply-content">
+                                                <div class="reply-title">
+                                                    <span>${message.ParentMessage.Author.Username}</span>
+                                                </div>
+                                                <div class="reply-subtitle">${message.ParentMessage.Content}</div>
+                                            </div>
+                                        </div>`
+            }
+            let messageClass;
+            if (message.Author.Id == currentUserId) {
+                messageClass = `sent-message`;
+            } else {
+                messageClass = `received-message`;
+            }
+            const messageElement = `<div class="message ${messageClass}" id="${message.id}">
+                            <div class="profile-img-container">
+                                <a href="${authorProfileInfoUrl}">
+                                    <img src="${message.Author.ProfilePictureUrl}" class="profile-img" alt="...">
+                                </a>
+                            </div>
+                        
+                            <div class="message-container">
+                                <div>
+                                    <a href="${message.Author.ProfilePictureUrl}" class="message-username">
+                                        ${message.Author.Username}
+                                    </a>
+                                    <span class="reply-span" data-message-id="${message.Id}">Ответить</span>
+                                </div>
+                                ${parentMessageElement}
+                                <div>
+                                    <span class="message-content">${content}</span>
+                                    <span class="sent-at-span">${formatDateTime(toLocalTime(message.SentAt))}</span>
+                                </div>
+                            </div>
+                        </div>`
+            return messageElement;
+        }
+
+        $(".load-more-messages").click(() => {
+            // TODO
+        });
 
     </script>
 }

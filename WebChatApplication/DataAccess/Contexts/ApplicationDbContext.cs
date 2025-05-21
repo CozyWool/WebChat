@@ -19,7 +19,7 @@ public class ApplicationDbContext : DbContext
     public virtual DbSet<UserRelationEntity> UserRelations { get; set; }
     public virtual DbSet<RoleEntity> Roles { get; set; }
     public virtual DbSet<ChatEntity> Chats { get; set; }
-    public virtual DbSet<MessageEntity> Messages { get; set; }
+    public virtual DbSet<MessageEntity?> Messages { get; set; }
     public virtual DbSet<AttachmentEntity> Attachments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
