@@ -1,4 +1,9 @@
-﻿.receiver-info {
+﻿.load-more-messages {
+    align-self: center;
+    border-radius: 20px;
+}
+
+.receiver-info {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
@@ -12,7 +17,7 @@
     display: flex;
     flex-direction: column;
     background-color: #e6e6e6;
-    height: 75vh;
+    height: 50vh;
     overflow-y: auto;
     max-height: 800px;
     padding: 20px;
@@ -37,7 +42,7 @@
     max-width: 75%;
 }
 
-.message-content {
+.message-container {
     display: flex;
     width: 100%;
     flex-direction: column;
@@ -47,6 +52,10 @@
 .message-username {
     color: darkblue;
     text-decoration: none;
+}
+
+.message-content {
+    display: block;
 }
 
 .sent-message {
@@ -61,7 +70,7 @@
 
 .sent-at-span {
     padding-left: 25px;
-    float:right;
+    float: right;
     align-self: center;
     color: gray;
     white-space: nowrap;
@@ -75,10 +84,12 @@
 
 .reply-span:hover {
     text-decoration: underline;
+    cursor: pointer;
 }
 
 .send-message-box {
     display: flex;
+    flex-direction: column;
     margin-top: 20px;
 }
 
@@ -95,8 +106,63 @@
 }
 
 .send-btn {
-    width: 20%;
-    margin-left: 10px;
+    /*width: 20%;*/
+    margin-top: 10px;
     border-radius: 20px;
 }
 
+.context-menu {
+    width: 200px;
+    height: fit-content;
+    min-height: 150px;
+    background: white;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px,
+    rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+    border-radius: 2mm;
+    position: absolute;
+}
+
+.context-menu-list {
+    width: 100%;
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.context-menu-section {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.context-menu-section:last-child {
+    border: none;
+}
+
+.context-menu-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+.context-menu-item:hover {
+    background: rgba(0, 0, 0, 0.07);
+}
+
+.context-menu-name {
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    margin-right: 10px;
+}

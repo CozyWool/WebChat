@@ -36,6 +36,10 @@ public class Startup(IConfiguration configuration)
 
         services.AddScoped<IChatService, ChatService>();
         services.AddScoped<IChatRepository, ChatRepository>();
+        
+        services.AddScoped<IMessageService, MessageService>();
+        services.AddScoped<IMessageRepository, MessageRepository>();
+        
         services.AddSignalR();
 
         services.AddFluentEmail(configuration);

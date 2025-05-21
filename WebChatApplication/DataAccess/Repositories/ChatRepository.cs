@@ -10,11 +10,13 @@ public class ChatRepository : IChatRepository
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IMessageRepository _messageRepository;
 
-    public ChatRepository(ApplicationDbContext dbContext, ICurrentUserService currentUserService)
+    public ChatRepository(ApplicationDbContext dbContext, ICurrentUserService currentUserService, IMessageRepository messageRepository)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
+        _messageRepository = messageRepository;
     }
 
     public async Task<List<ChatEntity>> GetCurrentUserChats()
@@ -32,9 +34,15 @@ public class ChatRepository : IChatRepository
                      .ToListAsync();
     }
 
-    public async Task<ChatEntity?> GetById(Guid id)
+    public async Task<ChatEntity?> GetById(Guid id, int messageCount)
     {
-        return await GetChatsQueryable().FirstOrDefaultAsync(c => c.Id == id);
+        var chat = await GetChatsQueryable().FirstOrDefaultAsync(c => c.Id == id);
+        // TODO
+        // if (chat is not null)
+        // {
+        //     chat.Messages = await _messageRepository.GetByChatId(id, 50);
+        // }
+        return chat;
     }
 
     public async Task<ChatEntity?> Create(ChatEntity? entity)
@@ -49,12 +57,13 @@ public class ChatRepository : IChatRepository
         return chat;
     }
 
-    private IIncludableQueryable<ChatEntity, ICollection<MessageEntity>> GetChatsQueryable()
+    private IQueryable<ChatEntity> GetChatsQueryable()
     {
         return _dbContext
                .Chats
                .Include(e => e.Owner)
                .Include(e => e.Users)
-               .Include(e => e.Messages);
+               .Include(e => e.Messages)
+               .AsSplitQuery();
     }
 }

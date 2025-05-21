@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using System.Globalization;
+using AutoMapper;
+using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 using WebChatApplication.DataAccess.Contexts;
 using WebChatApplication.DataAccess.Entities;
 using WebChatApplication.Models;
@@ -11,14 +14,17 @@ public class ChatHub : Hub
 {
     private readonly IChatService _chatService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IMapper _mapper;
     private readonly ApplicationDbContext _context;
 
     public ChatHub(IChatService chatService,
                    ICurrentUserService currentUserService,
+                   IMapper mapper,
                    ApplicationDbContext context)
     {
         _chatService = chatService;
         _currentUserService = currentUserService;
+        _mapper = mapper;
         _context = context;
     }
 
@@ -27,33 +33,51 @@ public class ChatHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, chatId.ToString());
     }
 
-    public async Task SendMessage(Guid chatId, string content, Guid messageId)
+    public async Task SendMessage(Guid chatId, string messageJson)
     {
-        var sentAt = DateTime.UtcNow;
-
-        var chat = await _chatService.GetChatById(chatId);
+        var jsonSerializerSettings = new JsonSerializerSettings
+                                     {
+                                         DateFormatString =
+                                             "dd.MM.yyyy HH:mm:ss",
+                                         DateTimeZoneHandling =
+                                             DateTimeZoneHandling.Utc,
+                                     };
+        var messageModel = JsonConvert.DeserializeObject<MessageModel>(messageJson, jsonSerializerSettings);
+        var chat = await _chatService.GetChatById(chatId, 0);
         var currentUserId = _currentUserService.CurrentUserId;
         if (currentUserId is null || chat is null)
         {
             return;
         }
 
-        var currentUserCard = chat.CurrentUser;
+        var messageEntity = _mapper.Map<MessageEntity>(messageModel);
+        messageEntity.ChatId = chatId;
+        messageEntity.ParentMessageId = messageModel?.ParentMessage?.Id;
+        messageEntity.UserId = currentUserId.Value;
+        messageEntity.ParentMessage = null;
+        messageEntity.User = null;
 
-        var messageEntity = new MessageEntity
-                            {
-                                Id = messageId,
-                                UserId = currentUserId.Value,
-                                ChatId = chatId,
-                                SentAt = sentAt,
-                                Content = content,
-                            };
         await _context.Messages.AddAsync(messageEntity);
         await _context.SaveChangesAsync();
-        await Clients.OthersInGroup(groupName: chatId.ToString()).SendAsync("ReceiveMessage",
-                                                                            content,
-                                                                            messageId,
-                                                                            sentAt.ToString(),
-                                                                            currentUserCard);
+
+        await Clients
+              .OthersInGroup(groupName: chatId.ToString())
+              .SendAsync(method: "ReceiveMessage",
+                         JsonConvert.SerializeObject(messageModel, jsonSerializerSettings));
+    }
+
+    public async Task DeleteMessage(Guid chatId, Guid messageId)
+    {
+        var chat = await _chatService.GetChatById(chatId, 0);
+        var currentUserId = _currentUserService.CurrentUserId;
+        if (currentUserId is null || chat is null)
+        {
+            return;
+        }
+        
+        await Clients
+              .OthersInGroup(groupName: chatId.ToString())
+              .SendAsync(method: "DeleteMessage",
+                         messageId);
     }
 }

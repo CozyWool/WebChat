@@ -42,9 +42,20 @@ function formatDateTime(date) {
 
     const hh = pad(date.getHours());
     const min = pad(date.getMinutes());
-    const ss = pad(date.getSeconds());
 
-    return `${dd}.${mm}.${yyyy} ${hh}:${min}:${ss}`;
+    const currentDate = new Date(Date.now());
+    const isCurrentYear = currentDate.getFullYear() === yyyy;
+    const isToday = pad(currentDate.getDate()) === dd
+        && pad(currentDate.getMonth() + 1) === mm
+        && isCurrentYear;
+
+    if (isToday) {
+        return `${hh}:${min}`;
+    }
+    if (isCurrentYear) {
+        return `${dd}.${mm} ${hh}:${min}`;
+    }
+    return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
 }
 
 document.querySelectorAll('.date-humanizer').forEach(el => {
