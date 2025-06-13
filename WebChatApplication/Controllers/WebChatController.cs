@@ -19,13 +19,18 @@ public class WebChatController : Controller
     }
 
     [AllowAnonymous]
-    [Route("/")]
+    [Route("/{chatIndex:int?}")]
     [HttpGet("index")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int chatIndex = 0)
     {
         ViewData["Title"] = "Веб-чат";
-
-        return View();
+        if (!User.Identity.IsAuthenticated)
+        {
+            return View(new WebChatViewModel());
+        }
+    
+        var model = await _chatService.GetChatsByUsername(User.Identity.Name, chatIndex);
+        return View(model);
     }
 
     [Route("private-chat/{userId:guid}")]
@@ -42,7 +47,7 @@ public class WebChatController : Controller
 
         return View(model);
     }
-    
+
     [HttpDelete("delete-message/{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {

@@ -1,1 +1,128 @@
-﻿<h1 class="text-center">Тут пока ничего нет......</h1>
+﻿@using WebChatApplication.Models
+@model WebChatApplication.Models.WebChatViewModel
+
+<style>
+    .side-menu-chat-info {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        margin-bottom: 5px;
+        border-radius: 20px;
+        height: 70px;
+        background-color: #ffffff;
+        cursor: pointer;
+    }
+
+    .side-menu-chat-info-selected {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        margin-bottom: 5px;
+        border-radius: 20px;
+        height: 70px;
+        background-color: #419fd9;
+        cursor: pointer;
+    }
+
+    .side-menu-chat-info:hover {
+        background-color: #f1f1f1;
+    }
+
+    .side-menu-last-message {
+        margin-bottom: 0;
+        width: 15vw;
+    }
+
+    .side-menu-container {
+        overflow-y: auto;
+        margin-right: 10px;
+        overflow-x: hidden;
+        height: 75vh;
+        width: 30vw;
+    }
+
+
+    .current-chat-container {
+        width: 80vw;
+    }
+</style>
+@if (!User.Identity.IsAuthenticated)
+{
+    <h3 class="text-center">Добро пожаловать в веб-чат!</h3>
+    <h5>Для продолжения войдите в аккаунт или зарегистрируйтесь</h5>
+    <a asp-action="Login" asp-controller="Account" class="btn btn-primary w-100">Войти</a>
+    <a asp-action="Register" asp-controller="Account" class="btn btn-secondary w-100 mt-2">Зарегистрироваться</a>
+}
+else
+{
+    <div class="d-flex flex-row">
+        <div class="side-menu-container">
+            <h5 class="text-center text-truncate">С возвращением,<br/> @User.Identity.Name!</h5>
+            <div class="d-flex flex-column">
+                @for (var i = 0; i < Model.Chats.Count; i++)
+                {
+                    var chatModel = Model.Chats[i];
+                    if (chatModel is PrivateChatModel privateChatModel)
+                    {
+                        <div
+                            class="@(Model.CurrentChat?.Id == privateChatModel.Id ? "side-menu-chat-info-selected" : "side-menu-chat-info")"
+                            onclick="location.href = '/web-chat/index?chatIndex=@i'">
+                            <div>
+                                <img src="@privateChatModel.PrivateUser.ProfilePictureUrl" class="profile-img"
+                                     alt="...">
+                            </div>
+                            <div class="ms-3 d-flex flex-column">
+                                <div class="d-flex flex-row">
+                                    <span class="text-truncate fw-bold" style="width: 15vw">@privateChatModel.PrivateUser.Username</span>
+                                    <div class="float-end">
+                                        @if (privateChatModel.PrivateUser.IsOnline)
+                                        {
+                                            <span class="mb-0"><i class="online-status"></i></span>
+                                        }
+                                        else if (privateChatModel.PrivateUser.LastActivityAt is not null)
+                                        {
+                                            <span class="mb-0"><i class="offline-status"></i></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="mb-0"><i class="never-online-status"></i></span>
+                                        }
+                                    </div>
+                                </div>
+                                <span class="mt-auto text-truncate side-menu-last-message">
+                                    @(privateChatModel.Messages.LastOrDefault()?.Content ?? "Нет сообщений")
+                                </span>
+                            </div>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <a asp-controller="WebChat" asp-action="Index" asp-route-chatIndex="@i">
+                            @chatModel.Name - @chatModel.ChatType - @chatModel.Id
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="current-chat-container">
+            @if (Model.CurrentChat is not null)
+            {
+                <partial name="PrivateChat" for="CurrentChat"/>
+            }
+            else
+            {
+                <h3 class="text-center">Выберите чат</h3>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts
+{
+    @if (Model.CurrentChat is not null)
+    {
+        <partial name="_PrivateChatScripts" for="CurrentChat"></partial>
+    }
+}

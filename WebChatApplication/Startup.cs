@@ -88,7 +88,7 @@ public class Startup(IConfiguration configuration)
         app.UseEndpoints(endpoints =>
                          {
                              endpoints.MapControllerRoute("default",
-                                                          "{controller=WebChat}/{action=Index}/{id?}");
+                                                          "{controller=WebChat}/{action=Index}/{chatIndex:int?}");
                              endpoints.MapHub<ChatHub>("/chatHub");
                              if (env.IsDevelopment())
                              {

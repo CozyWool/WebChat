@@ -25,23 +25,24 @@ public class ChatService : IChatService
     public async Task<ChatModel?> GetChatById(Guid chatId, int messageCount = 50)
     {
         var currentUser = await _currentUserService.GetCurrentUser();
-        var chat = await _chatRepository.GetById(chatId, messageCount);
-        if (currentUser is null || chat is null)
+        var chatEntity = await _chatRepository.GetById(chatId, messageCount);
+        if (currentUser is null || chatEntity is null)
         {
             return null;
         }
 
-        switch (chat.ChatType)
+        var chatModel = _mapper.Map<ChatModel>(chatEntity);
+        switch (chatModel.ChatType)
         {
             case ChatTypes.Private:
             {
-                var model = _mapper.Map<PrivateChatModel>(chat);
-                return model;
+                var privateModel = _mapper.Map<PrivateChatModel>(chatModel);
+                return privateModel;
             }
             case ChatTypes.Group:
             {
-                var model = _mapper.Map<GroupChatModel>(chat);
-                return model;
+                var groupChatModel = _mapper.Map<GroupChatModel>(chatModel);
+                return groupChatModel;
             }
         }
 
@@ -62,26 +63,28 @@ public class ChatService : IChatService
             return null;
         }
 
-        var chat = currentUser.Chats.FirstOrDefault(x =>
-                                                      {
-                                                          if (x.Users.Count != 2 || x.ChatType != ChatTypes.Private)
+        var chatEntity = currentUser.Chats.FirstOrDefault(x =>
                                                           {
-                                                              return false;
-                                                          }
+                                                              if (x.Users.Count != 2 || x.ChatType != ChatTypes.Private)
+                                                              {
+                                                                  return false;
+                                                              }
 
-                                                          return x.Users.FirstOrDefault(u => u.Id == userId) is not null;
-                                                      });
-        if (chat is null)
+                                                              return x.Users.FirstOrDefault(u => u.Id == userId) is not
+                                                                         null;
+                                                          });
+        if (chatEntity is null)
         {
-            chat = await CreatePrivateChat(userId);
-            if (chat is null)
+            chatEntity = await CreatePrivateChat(userId);
+            if (chatEntity is null)
             {
                 return null;
             }
         }
 
-        var model = _mapper.Map<PrivateChatModel>(chat);
-        return model;
+        var chatModel = _mapper.Map<ChatModel>(chatEntity);
+        var privateChatModel = _mapper.Map<PrivateChatModel>(chatModel);
+        return privateChatModel;
     }
 
     public async Task<ChatEntity?> CreatePrivateChat(Guid userId)
@@ -107,5 +110,49 @@ public class ChatService : IChatService
     public async Task<Guid?> CreateGroupChat(List<Guid> userIds)
     {
         throw new NotImplementedException();
+    }
+
+    public async Task<WebChatViewModel> GetChatsByUsername(string? username, int chatIndex)
+    {
+        var chats = await _chatRepository.GetCurrentUserChats();
+        var mappedChats = _mapper.Map<List<ChatModel>>(chats);
+        for (var i = 0; i < mappedChats.Count; i++)
+        {
+            switch (mappedChats[i].ChatType)
+            {
+                case ChatTypes.Private:
+                    var privateChatModel = _mapper.Map<PrivateChatModel>(mappedChats[i]);
+                    var currentUser = await _currentUserService.GetCurrentUser();
+                    if (currentUser is not null)
+                    {
+                        var relationToUser =
+                            currentUser.RelatedUsers.FirstOrDefault(x => x.ToUserId ==
+                                                                         privateChatModel.PrivateUser.UserId);
+                        if (relationToUser?.RelationType is not UserRelationTypes.Friend)
+                        {
+                            privateChatModel = null;
+                        }
+                    }
+
+
+                    if (privateChatModel is null)
+                    {
+                        mappedChats.RemoveAt(i);
+                        i--;
+                        break;
+                    }
+
+                    mappedChats[i] = privateChatModel;
+                    break;
+            }
+        }
+
+
+        var model = new WebChatViewModel
+                    {
+                        CurrentChat = chatIndex < mappedChats.Count ? mappedChats[chatIndex] : null,
+                        Chats = mappedChats
+                    };
+        return model;
     }
 }
