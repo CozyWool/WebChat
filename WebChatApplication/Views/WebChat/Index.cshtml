@@ -20,7 +20,7 @@
         margin-bottom: 5px;
         border-radius: 20px;
         height: 70px;
-        background-color: #419fd9;
+        background-color: #f5f6f7;
         cursor: pointer;
     }
 
@@ -30,7 +30,16 @@
 
     .side-menu-last-message {
         margin-bottom: 0;
-        width: 15vw;
+        color: gray;
+        width: 10vw;
+    }
+
+    .side-menu-last-message-sent-at {
+        margin-left: auto;
+        float: right;
+        color: gray;
+        align-self: center;
+        white-space: nowrap;
     }
 
     .side-menu-container {
@@ -73,7 +82,8 @@ else
                             </div>
                             <div class="ms-3 d-flex flex-column">
                                 <div class="d-flex flex-row">
-                                    <span class="text-truncate fw-bold" style="width: 15vw">@privateChatModel.PrivateUser.Username</span>
+                                    <span class="text-truncate fw-bold"
+                                          style="width: 15vw">@privateChatModel.PrivateUser.Username</span>
                                     <div class="float-end">
                                         @if (privateChatModel.PrivateUser.IsOnline)
                                         {
@@ -89,9 +99,13 @@ else
                                         }
                                     </div>
                                 </div>
-                                <span class="mt-auto text-truncate side-menu-last-message">
-                                    @(privateChatModel.Messages.LastOrDefault()?.Content ?? "Нет сообщений")
-                                </span>
+                                <div class="d-flex flex-row">
+                                    <span class="mt-auto text-truncate side-menu-last-message">
+                                        @(privateChatModel.Messages.LastOrDefault()?.Content ?? "Нет сообщений")
+                                    </span>
+                                    <span
+                                        class="date-utc-span side-menu-last-message-sent-at">@(privateChatModel.Messages.LastOrDefault()?.SentAt.ToString() ?? "")</span>
+                                </div>
                             </div>
 
                         </div>
