@@ -95,8 +95,14 @@
             </div>
         </div>
 
-        <textarea rows="4" class="message-field" placeholder="Сообщение..."></textarea>
-        <button class="send-btn btn btn-dark">Отправить</button>
+        <div id="send-message-input-container">
+            <textarea rows="4" class="message-field" placeholder="Сообщение..." id="send-message-field"></textarea>
+            <button id="send-button" class="send-btn btn btn-dark">Отправить</button>
+        </div>
+        <div id="edit-message-input-container">
+            <textarea rows="4" class="message-field" placeholder="Сообщение..." id="edit-message-field"></textarea>
+            <button id="edit-button" class="send-btn btn btn-dark">Изменить</button>
+        </div>
     </div>
 </div>
 
@@ -158,6 +164,11 @@
                         <i class="fa-solid fa-reply me-2"></i> Ответить
                     </div>
                 </div>
+                <div class="context-menu-item" id="context-menu-edit-button">
+                    <div class="context-menu-name">
+                        <i class="fa-solid fa-pen me-2"></i> Изменить
+                    </div>
+                </div>
                 <div class="context-menu-item" id="context-menu-forward-button">
                     <div class="context-menu-name">
                         <i class="fa-solid fa-share me-2"></i> Переслать
@@ -177,9 +188,11 @@
     <script>
         let contextMenu = document.querySelector(".context-menu");
         let contextMenuReplyButton = document.querySelector("#context-menu-reply-button");
+        let contextMenuEditButton = document.querySelector("#context-menu-edit-button");
         let contextMenuForwardButton = document.querySelector("#context-menu-forward-button");
         let contextMenuDeleteButton = document.querySelector("#context-menu-delete-button");
         let selectedMessage = null;
+        let replyMessage = null;
 
         let sendMessageReplyContainer = document.querySelector("#send-message-reply-container");
         let sendMessageReplyTitle = document.querySelector("#send-message-reply-title");
@@ -195,6 +208,7 @@
         document.querySelectorAll('.reply-span').forEach(replySpanEventHandler);
 
         contextMenuReplyButton.addEventListener("click", replyClick)
+        contextMenuReplyButton.addEventListener("click", editClick)
         contextMenuForwardButton.addEventListener("click", forwardClick)
         contextMenuDeleteButton.addEventListener("click", deleteClick)
 
@@ -221,7 +235,7 @@
 
         function closeReplyBox() {
             sendMessageReplyContainer.style.display = "none";
-            selectedMessage = null;
+            replyMessage = null;
         }
 
         function contextMenuEventHandler(e) {
@@ -274,10 +288,15 @@
         }
 
         function replyClick() {
-            console.log("Reply button with id: ", selectedMessage.id);
-            sendMessageReplyTitle.innerHTML = `В ответ ${selectedMessage.authorUsername}`;
-            sendMessageReplySubtitle.innerHTML = selectedMessage.content;
+            replyMessage = {...selectedMessage};
+            console.log("Reply button with id: ", replyMessage.id);
+            sendMessageReplyTitle.innerHTML = `В ответ ${replyMessage.authorUsername}`;
+            sendMessageReplySubtitle.innerHTML = replyMessage.content;
             sendMessageReplyContainer.style.display = "block";
+        }
+
+        function editClick() {
+            console.log("Edit button with id: ", selectedMessage.id);
         }
 
         function forwardClick() {
@@ -307,6 +326,9 @@
         }
 
         function deleteMessage(messageId) {
+            if (replyMessage !== null && messageId === replyMessage.id) {
+                closeReplyBox();
+            }
             const element = document.getElementById(messageId);
             element.parentNode.removeChild(element);
         }
@@ -325,7 +347,12 @@
             .withAutomaticReconnect()
             .build();
         const messagesBox = $(".messages-box");
-        const messageField = $(".message-field");
+        const sendMessageField = $("#send-message-field");
+        const editMessageField = $("#edit-message-field");
+        const sendMessageInputContainer = document.querySelector("#send-message-input-container");
+        const editMessageInputContainer = document.querySelector("#edit-message-input-container");
+        editMessageInputContainer.style.display = "none";
+        
 
         connection.start().then(function () {
             connection.invoke("JoinChat", chatId)
@@ -335,9 +362,13 @@
             console.error(err.toString())
         });
 
+        function editMessage() {
+            
+        }
+
         function sendMessage() {
             try {
-                const content = messageField.val();
+                const content = sendMessageField.val();
                 const messageId = generateRandomGuid();
 
                 if (content === "") {
@@ -346,7 +377,14 @@
 
                 const message = {
                     Id: messageId,
-                    SentAt: "@DateTime.UtcNow",
+                    SentAt: new Date(Date.now() + (new Date()).getTimezoneOffset() * 60 * 1000).toLocaleString('ru', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    }).replace(',', ''),
                     Content: content,
                     Author: {
                         Id: currentUserId,
@@ -356,26 +394,35 @@
                     ParentMessage: null
                 }
 
-                if (selectedMessage !== null) {
+                if (replyMessage !== null) {
                     message.ParentMessage = {
-                        Id: selectedMessage.id,
+                        Id: replyMessage.id,
                         Author: {
-                            Username: selectedMessage.authorUsername
+                            Username: replyMessage.authorUsername
                         },
-                        Content: selectedMessage.content
+                        Content: replyMessage.content
                     };
                 }
                 closeReplyBox();
                 connection.invoke("SendMessage", chatId, JSON.stringify(message));
                 receiveMessage(message);
-                messageField.val("").focus();
+                sendMessageField.val("").focus();
             } catch (error) {
                 console.error(error);
             }
         }
 
-        $(".send-btn").click(sendMessage);
-        messageField.keypress(function (e) {
+        $("#send-button").click(sendMessage);
+        sendMessageField.keypress(function (e) {
+            if (e.which === 13 && !e.shiftKey) {
+                e.preventDefault();
+
+                sendMessage();
+            }
+        });
+
+        $("#edit-button").click(editMessage);
+        editMessageField.keypress(function (e) {
             if (e.which === 13 && !e.shiftKey) {
                 e.preventDefault();
 
@@ -442,7 +489,7 @@
             } else {
                 messageClass = `received-message`;
             }
-            const messageElement = `<div class="message ${messageClass}" id="${message.id}">
+            const messageElement = `<div class="message ${messageClass}" id="${message.Id}">
                             <div class="profile-img-container">
                                 <a href="${authorProfileInfoUrl}">
                                     <img src="${message.Author.ProfilePictureUrl}" class="profile-img" alt="...">

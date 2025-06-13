@@ -1,0 +1,336 @@
+﻿@model WebChatApplication.Models.PrivateChatModel
+
+
+<script>
+    let contextMenu = document.querySelector(".context-menu");
+    let contextMenuReplyButton = document.querySelector("#context-menu-reply-button");
+    let contextMenuEditButton = document.querySelector("#context-menu-edit-button");
+    let contextMenuForwardButton = document.querySelector("#context-menu-forward-button");
+    let contextMenuDeleteButton = document.querySelector("#context-menu-delete-button");
+    let selectedMessage = null;
+    let replyMessage = null;
+
+    let sendMessageReplyContainer = document.querySelector("#send-message-reply-container");
+    let sendMessageReplyTitle = document.querySelector("#send-message-reply-title");
+    let sendMessageReplySubtitle = document.querySelector("#send-message-reply-subtitle");
+    sendMessageReplyContainer.style.display = "none";
+
+    let intiHeight = contextMenu.offsetHeight;
+    let initWidth = contextMenu.offsetWidth;
+    contextMenu.style.display = "none";
+    document.querySelectorAll('.message').forEach(element => {
+        element.addEventListener("contextmenu", contextMenuEventHandler);
+    });
+    document.querySelectorAll('.reply-span').forEach(replySpanEventHandler);
+
+    contextMenuReplyButton.addEventListener("click", replyClick)
+    contextMenuReplyButton.addEventListener("click", editClick)
+    contextMenuForwardButton.addEventListener("click", forwardClick)
+    contextMenuDeleteButton.addEventListener("click", deleteClick)
+
+
+    window.addEventListener("click", () => {
+        contextMenu.style.display = "none";
+    });
+    $("#send-message-close-reply-button").click(closeReplyBox);
+
+    function replySpanEventHandler(el) {
+        const messageId = el.dataset.messageId;
+        if (messageId) {
+            el.addEventListener("click", () => {
+                let parentElement = el.parentElement.parentElement;
+                selectedMessage = {
+                    id: messageId,
+                    authorUsername: parentElement.querySelector(".message-username").textContent,
+                    content: parentElement.querySelector(".message-content").textContent
+                }
+                replyClick()
+            });
+        }
+    }
+
+    function closeReplyBox() {
+        sendMessageReplyContainer.style.display = "none";
+        replyMessage = null;
+    }
+
+    function contextMenuEventHandler(e) {
+        e.preventDefault();
+        const clickedElement = $(e.currentTarget)
+        const parentElement = clickedElement.parent(".message");
+        const messageId = parentElement.prevObject.attr("id");
+        console.log("messageId: ", messageId)
+        selectedMessage = {
+            id: messageId,
+            authorUsername: parentElement.prevObject.find(".message-username")[0].textContent,
+            content: parentElement.prevObject.find(".message-content")[0].textContent
+        }
+
+        openMenu(e);
+    }
+
+    function openMenu(e) {
+        let positionX = e.clientX;
+        let positionY = e.clientY;
+        let wHeight = window.innerHeight;
+        let wWidth = window.innerWidth;
+
+        let menuHeight = contextMenu.offsetHeight || intiHeight;
+        let menuWidth = contextMenu.offsetWidth || initWidth;
+
+        let availableHeight = wHeight - positionY;
+        let availableWidth = wWidth - positionX;
+
+        if (availableHeight >= menuHeight) {
+            contextMenu.style.top = positionY + "px";
+            contextMenu.style.bottom = "auto";
+        } else {
+            contextMenu.style.bottom = wHeight - positionY + "px";
+            contextMenu.style.top = "auto";
+            if (positionY < menuHeight) {
+                contextMenu.style.top = "0px";
+                contextMenu.style.bottom = "auto";
+            }
+        }
+
+        if (availableWidth >= menuWidth) {
+            contextMenu.style.left = positionX + "px";
+            contextMenu.style.right = "auto";
+        } else {
+            contextMenu.style.right = wWidth - positionX + "px";
+            contextMenu.style.left = "auto";
+        }
+        contextMenu.style.display = "block";
+    }
+
+    function replyClick() {
+        replyMessage = {...selectedMessage};
+        console.log("Reply button with id: ", replyMessage.id);
+        sendMessageReplyTitle.innerHTML = `В ответ ${replyMessage.authorUsername}`;
+        sendMessageReplySubtitle.innerHTML = replyMessage.content;
+        sendMessageReplyContainer.style.display = "block";
+    }
+
+    function editClick() {
+        console.log("Edit button with id: ", selectedMessage.id);
+    }
+
+    function forwardClick() {
+        console.log("Forward button with id: ", selectedMessage.id);
+    }
+
+    async function deleteClick() {
+        try {
+            let confirmedDelete = confirm("Вы уверены, что хотите удалить это сообщение?")
+            if (!confirmedDelete) return
+            const response = await fetch(`/web-chat/delete-message/` + selectedMessage.id, {
+                method: "DELETE",
+                headers: {"Accept": "application/json", "Content-Type": "application/json"}
+            });
+            console.log(response);
+            if (response.ok) {
+                deleteMessage(selectedMessage.id);
+                connection.invoke("DeleteMessage", chatId, selectedMessage.id);
+            } else {
+                alert('Произошла ошибка при удалении/Нет доступа');
+            }
+        } catch (error) {
+            console.log(error);
+            alert('Произошла ошибка при удалении/Нет доступа');
+        }
+        console.log("Delete button with id: ", selectedMessage.id);
+    }
+
+    function deleteMessage(messageId) {
+        if (replyMessage !== null && messageId === replyMessage.id) {
+            closeReplyBox();
+        }
+        const element = document.getElementById(messageId);
+        element.parentNode.removeChild(element);
+    }
+</script>
+
+<script src="~/js/signalr.min.js"></script>
+
+<script>
+    const chatId = "@Model.Id";
+    const currentUserId = "@Model.CurrentUser.UserId";
+    const currentUsername = "@Model.CurrentUser.Username";
+    const currentUserProfilePictureUrl = "@Model.CurrentUser.ProfilePictureUrl";
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .withAutomaticReconnect()
+        .build();
+    const messagesBox = $(".messages-box");
+    const sendMessageField = $("#send-message-field");
+    const editMessageField = $("#edit-message-field");
+    const sendMessageInputContainer = document.querySelector("#send-message-input-container");
+    const editMessageInputContainer = document.querySelector("#edit-message-input-container");
+    editMessageInputContainer.style.display = "none";
+
+
+    connection.start().then(function () {
+        connection.invoke("JoinChat", chatId)
+        console.log("Connected!");
+    }).catch(function (err) {
+        console.error(err)
+        console.error(err.toString())
+    });
+
+    function editMessage() {
+
+    }
+
+    function sendMessage() {
+        try {
+            const content = sendMessageField.val();
+            const messageId = generateRandomGuid();
+
+            if (content === "") {
+                return;
+            }
+
+            const message = {
+                Id: messageId,
+                SentAt: new Date(Date.now() + (new Date()).getTimezoneOffset() * 60 * 1000).toLocaleString('ru', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }).replace(',', ''),
+                Content: content,
+                Author: {
+                    Id: currentUserId,
+                    Username: currentUsername,
+                    ProfilePictureUrl: currentUserProfilePictureUrl
+                },
+                ParentMessage: null
+            }
+
+            if (replyMessage !== null) {
+                message.ParentMessage = {
+                    Id: replyMessage.id,
+                    Author: {
+                        Username: replyMessage.authorUsername
+                    },
+                    Content: replyMessage.content
+                };
+            }
+            closeReplyBox();
+            connection.invoke("SendMessage", chatId, JSON.stringify(message));
+            receiveMessage(message);
+            sendMessageField.val("").focus();
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    $("#send-button").click(sendMessage);
+    sendMessageField.keypress(function (e) {
+        if (e.which === 13 && !e.shiftKey) {
+            e.preventDefault();
+
+            sendMessage();
+        }
+    });
+
+    $("#edit-button").click(editMessage);
+    editMessageField.keypress(function (e) {
+        if (e.which === 13 && !e.shiftKey) {
+            e.preventDefault();
+
+            sendMessage();
+        }
+    });
+
+    connection.on("ReceiveMessage", receiveMessage);
+    connection.on("DeleteMessage", deleteMessage);
+
+    function receiveMessage(message) {
+        try {
+            if (typeof message === "string") {
+                message = JSON.parse(message);
+            }
+            console.log("Received message", message);
+            let _messageElement = renderMessageElement(message);
+
+            messagesBox.append(_messageElement);
+            messagesBox[0].lastElementChild.addEventListener("contextmenu", contextMenuEventHandler);
+            messagesBox[0].lastElementChild.querySelectorAll('.reply-span').forEach(replySpanEventHandler);
+
+            if (message.Author.Id == currentUserId) {
+                messagesBox.scrollTop(messagesBox[0].scrollHeight);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+
+    $(goToLastMessage)
+
+    function goToLastMessage() {
+        messagesBox.scrollTop(messagesBox[0].scrollHeight);
+    }
+
+    function generateRandomGuid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    function renderMessageElement(message) {
+        let content = $('<div />').text(message.Content).html();
+        let authorProfileInfoUrl = `/account/profile-info?username=${message.Author.Username}`;
+        let parentMessageElement = ``;
+        if (message.ParentMessage !== null) {
+            parentMessageElement = `<div class="reply quote-like quote-like-hoverable quote-like-border"
+                                             data-parent-message-id="${message.ParentMessage.Id}">
+                                            <div class="c-ripple"></div>
+                                            <div class="reply-content">
+                                                <div class="reply-title">
+                                                    <span>${message.ParentMessage.Author.Username}</span>
+                                                </div>
+                                                <div class="reply-subtitle">${message.ParentMessage.Content}</div>
+                                            </div>
+                                        </div>`
+        }
+        let messageClass;
+        if (message.Author.Id == currentUserId) {
+            messageClass = `sent-message`;
+        } else {
+            messageClass = `received-message`;
+        }
+        const messageElement = `<div class="message ${messageClass}" id="${message.Id}">
+                            <div class="profile-img-container">
+                                <a href="${authorProfileInfoUrl}">
+                                    <img src="${message.Author.ProfilePictureUrl}" class="profile-img" alt="...">
+                                </a>
+                            </div>
+                        
+                            <div class="message-container">
+                                <div>
+                                    <a href="${message.Author.ProfilePictureUrl}" class="message-username">
+                                        ${message.Author.Username}
+                                    </a>
+                                    <span class="reply-span" data-message-id="${message.Id}">Ответить</span>
+                                </div>
+                                ${parentMessageElement}
+                                <div>
+                                    <span class="message-content">${content}</span>
+                                    <span class="sent-at-span">${formatDateTime(toLocalTime(message.SentAt))}</span>
+                                </div>
+                            </div>
+                        </div>`
+        return messageElement;
+    }
+
+    $(".load-more-messages").click(() => {
+        // TODO
+    });
+
+</script>

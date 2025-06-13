@@ -10,23 +10,29 @@ public class ChatProfile : Profile
 {
     public ChatProfile()
     {
-        CreateMap<ChatEntity, PrivateChatModel>().AfterMap<PrivateChatModelMappingAction>().ReverseMap();
+        CreateMap<ChatEntity, ChatModel>().AfterMap<ChatModelMappingAction>().ReverseMap();
+        CreateMap<ChatModel, PrivateChatModel>().AfterMap<PrivateChatModelMappingAction>().ReverseMap();
     }
 
-    private class PrivateChatModelMappingAction(ICurrentUserService currentUserService)
-        : IMappingAction<ChatEntity, PrivateChatModel>
+    private class ChatModelMappingAction(ICurrentUserService currentUserService)
+        : IMappingAction<ChatEntity, ChatModel>
     {
-        public void Process(ChatEntity source, PrivateChatModel destination, ResolutionContext context)
+        public void Process(ChatEntity source, ChatModel destination, ResolutionContext context)
         {
             destination.CurrentUser = context.Mapper.Map<UserCardModel>(currentUserService.GetCurrentUser().Result);
-            destination.PrivateUser = context
-                                      .Mapper
-                                      .Map<UserCardModel>
-                                          (source
-                                           .Users
-                                           .FirstOrDefault(e => e.Id != currentUserService.CurrentUserId));
             destination.Messages =
                 context.Mapper.Map<List<MessageModel>>(source.Messages.OrderBy(e => e.SentAt).ToList());
+        }
+    }
+
+    private class PrivateChatModelMappingAction : IMappingAction<ChatModel, PrivateChatModel>
+    {
+        public void Process(ChatModel source, PrivateChatModel destination, ResolutionContext context)
+        {
+            destination.PrivateUser = source
+                                      .Users
+                                      .FirstOrDefault(e => e.Username != source.CurrentUser.Username)
+                                      ?? throw new InvalidOperationException("Private user not found");
         }
     }
 }

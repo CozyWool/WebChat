@@ -13,6 +13,11 @@ public class LastActivityMiddleware
 
     public async Task InvokeAsync(HttpContext context, IUserService userService)
     {
+        if (context.GetEndpoint()?.DisplayName.Contains("hangfire") is true)
+        {
+            await _next.Invoke(context);
+            return;
+        }
         var user = context.User;
 
         if (user.Identity is {IsAuthenticated: true})

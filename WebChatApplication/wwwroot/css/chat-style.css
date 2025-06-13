@@ -10,13 +10,14 @@
     padding: 20px;
     border-radius: 20px;
     height: 70px;
-    background-color: #e6e6e6;
+    background-color: #f1f1f1;
 }
 
 .messages-box {
     display: flex;
     flex-direction: column;
-    background-color: #e6e6e6;
+    background-color: #f1f1f1;
+    border-radius: 10px 0 0 10px;
     height: 50vh;
     overflow-y: auto;
     max-height: 800px;
@@ -50,7 +51,7 @@
 }
 
 .message-username {
-    color: darkblue;
+    color: #168acd;
     text-decoration: none;
 }
 
@@ -94,10 +95,11 @@
 }
 
 .message-field {
+    width: 100%;
     flex: 1;
     border: none;
     border-radius: 20px;
-    background-color: #e6e6e6;
+    background-color: #f1f1f1;
     padding: 10px;
 }
 
@@ -106,8 +108,8 @@
 }
 
 .send-btn {
-    /*width: 20%;*/
     margin-top: 10px;
+    width: 100%;
     border-radius: 20px;
 }
 

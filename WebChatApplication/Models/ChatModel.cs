@@ -10,5 +10,6 @@ public class ChatModel
     public string Name { get; set; }
     public ChatTypes ChatType { get; set; }
     public UserCardModel CurrentUser { get; set; }
+    public List<UserCardModel> Users { get; set; }
     public List<MessageModel> Messages { get; set; }
 }

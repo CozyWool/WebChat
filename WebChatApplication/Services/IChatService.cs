@@ -9,4 +9,5 @@ public interface IChatService
     Task<PrivateChatModel?> GetPrivateChatByUserId(Guid userId);
     Task<ChatEntity?> CreatePrivateChat(Guid userId);
     Task<Guid?> CreateGroupChat(List<Guid> userIds);
+    Task<WebChatViewModel> GetChatsByUsername(string? username, int chatIndex);
 }
