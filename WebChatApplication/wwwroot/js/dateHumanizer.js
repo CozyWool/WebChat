@@ -71,8 +71,9 @@ document.querySelectorAll('.date-utc-input').forEach(el => {
     }
 });
 document.querySelectorAll('.date-utc-span').forEach(el => {
-    const utc = el.textContent;
+    const utc = el.textContent.trim();
     if (utc) {
+        console.log(utc);
         el.textContent = formatDateTime(toLocalTime(utc));
     }
 });

@@ -10,13 +10,11 @@ public class ChatRepository : IChatRepository
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IMessageRepository _messageRepository;
 
-    public ChatRepository(ApplicationDbContext dbContext, ICurrentUserService currentUserService, IMessageRepository messageRepository)
+    public ChatRepository(ApplicationDbContext dbContext, ICurrentUserService currentUserService)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
-        _messageRepository = messageRepository;
     }
 
     public async Task<List<ChatEntity>> GetCurrentUserChats()
@@ -31,17 +29,26 @@ public class ChatRepository : IChatRepository
                      .Where(c => c
                                  .Users
                                  .Any(u => u.Id == currentUserId))
+                     .OrderByDescending(x => x.Messages.Count > 0
+                                                 ? x.Messages.OrderBy(e => e.SentAt).Last().SentAt
+                                                 : DateTime.MinValue)
                      .ToListAsync();
     }
 
-    public async Task<ChatEntity?> GetById(Guid id, int messageCount)
+    public async Task<ChatEntity?> GetById(Guid id, int messageCount, int alreadyLoadedMessageCount)
     {
         var chat = await GetChatsQueryable().FirstOrDefaultAsync(c => c.Id == id);
-        // TODO
-        // if (chat is not null)
-        // {
-        //     chat.Messages = await _messageRepository.GetByChatId(id, 50);
-        // }
+
+        if (chat is not null && messageCount > 0)
+        {
+            chat.Messages = chat
+                            .Messages
+                            .OrderBy(m => m.SentAt)
+                            .SkipLast(alreadyLoadedMessageCount)
+                            .TakeLast(messageCount)
+                            .ToList();
+        }
+
         return chat;
     }
 
@@ -64,6 +71,7 @@ public class ChatRepository : IChatRepository
                .Include(e => e.Owner)
                .Include(e => e.Users)
                .Include(e => e.Messages)
+               .ThenInclude(e => e.User)
                .AsSplitQuery();
     }
 }

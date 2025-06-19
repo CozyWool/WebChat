@@ -1,4 +1,5 @@
-﻿@model WebChatApplication.Models.PrivateChatModel
+﻿@using Newtonsoft.Json
+@model WebChatApplication.Models.PrivateChatModel
 
 
 <script>
@@ -59,7 +60,7 @@
         const clickedElement = $(e.currentTarget)
         const parentElement = clickedElement.parent(".message");
         const messageId = parentElement.prevObject.attr("id");
-        console.log("messageId: ", messageId)
+        // console.log("messageId: ", messageId)
         selectedMessage = {
             id: messageId,
             authorUsername: parentElement.prevObject.find(".message-username")[0].textContent,
@@ -105,7 +106,7 @@
 
     function replyClick() {
         replyMessage = {...selectedMessage};
-        console.log("Reply button with id: ", replyMessage.id);
+        // console.log("Reply button with id: ", replyMessage.id);
         sendMessageReplyTitle.innerHTML = `В ответ ${replyMessage.authorUsername}`;
         sendMessageReplySubtitle.innerHTML = replyMessage.content;
         sendMessageReplyContainer.style.display = "block";
@@ -127,7 +128,7 @@
                 method: "DELETE",
                 headers: {"Accept": "application/json", "Content-Type": "application/json"}
             });
-            console.log(response);
+            // console.log(response);
             if (response.ok) {
                 deleteMessage(selectedMessage.id);
                 connection.invoke("DeleteMessage", chatId, selectedMessage.id);
@@ -138,7 +139,7 @@
             console.log(error);
             alert('Произошла ошибка при удалении/Нет доступа');
         }
-        console.log("Delete button with id: ", selectedMessage.id);
+        // console.log("Delete button with id: ", selectedMessage.id);
     }
 
     function deleteMessage(messageId) {
@@ -172,7 +173,7 @@
 
     connection.start().then(function () {
         connection.invoke("JoinChat", chatId)
-        console.log("Connected!");
+        // console.log("Connected!");
     }).catch(function (err) {
         console.error(err)
         console.error(err.toString())
@@ -269,7 +270,6 @@
         }
     }
 
-
     $(goToLastMessage)
 
     function goToLastMessage() {
@@ -288,49 +288,126 @@
         let authorProfileInfoUrl = `/account/profile-info?username=${message.Author.Username}`;
         let parentMessageElement = ``;
         if (message.ParentMessage !== null) {
-            parentMessageElement = `<div class="reply quote-like quote-like-hoverable quote-like-border"
-                                             data-parent-message-id="${message.ParentMessage.Id}">
-                                            <div class="c-ripple"></div>
-                                            <div class="reply-content">
-                                                <div class="reply-title">
-                                                    <span>${message.ParentMessage.Author.Username}</span>
-                                                </div>
-                                                <div class="reply-subtitle">${message.ParentMessage.Content}</div>
-                                            </div>
-                                        </div>`
+            parentMessageElement = `
+    <div class="reply quote-like quote-like-hoverable quote-like-border"
+         data-parent-message-id="${message.ParentMessage.Id}">
+        <div class="c-ripple"></div>
+        <div class="reply-content">
+            <div class="reply-title">
+                <span>${message.ParentMessage.Author.Username}</span>
+            </div>
+            <div class="reply-subtitle">${message.ParentMessage.Content}</div>
+        </div>
+    </div>`
         }
         let messageClass;
-        if (message.Author.Id == currentUserId) {
+        if (message.Author.Username === currentUsername) {
             messageClass = `sent-message`;
         } else {
             messageClass = `received-message`;
         }
-        const messageElement = `<div class="message ${messageClass}" id="${message.Id}">
-                            <div class="profile-img-container">
-                                <a href="${authorProfileInfoUrl}">
-                                    <img src="${message.Author.ProfilePictureUrl}" class="profile-img" alt="...">
-                                </a>
-                            </div>
-                        
-                            <div class="message-container">
-                                <div>
-                                    <a href="${message.Author.ProfilePictureUrl}" class="message-username">
-                                        ${message.Author.Username}
-                                    </a>
-                                    <span class="reply-span" data-message-id="${message.Id}">Ответить</span>
-                                </div>
-                                ${parentMessageElement}
-                                <div>
-                                    <span class="message-content">${content}</span>
-                                    <span class="sent-at-span">${formatDateTime(toLocalTime(message.SentAt))}</span>
-                                </div>
-                            </div>
-                        </div>`
+        const messageElement = `
+    <div class="message ${messageClass}" id="${message.Id}">
+        <div class="profile-img-container">
+            <a href="${authorProfileInfoUrl}">
+                <img src="${message.Author.ProfilePictureUrl}" class="profile-img" alt="...">
+            </a>
+        </div>
+
+        <div class="message-container">
+            <div>
+                <a href="${message.Author.ProfilePictureUrl}" class="message-username">
+                    ${message.Author.Username}
+                </a>
+                <span class="reply-span" data-message-id="${message.Id}">Ответить</span>
+            </div>
+            ${parentMessageElement}
+            <div>
+                <span class="message-content">${content}</span>
+                <span class="sent-at-span">${formatDateTime(toLocalTime(message.SentAt))}</span>
+            </div>
+        </div>
+    </div>`
+        alreadyLoadedMessageCount += 1;
+        $("#already-loaded-message-count").val(alreadyLoadedMessageCount);
         return messageElement;
     }
+</script>
 
-    $(".load-more-messages").click(() => {
-        // TODO
+<script>
+    // Load more messages
+    const form = document.getElementById('load-more-messages-form');
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
     });
 
+    jQuery.fn.insertAt = function (index, element) {
+        let lastIndex = this.children().length;
+        if (index < 0) {
+            index = Math.max(0, lastIndex + 1 + index);
+        }
+        this.append(element);
+        if (index < lastIndex) {
+            this.children().eq(index).before(this.children().last());
+        }
+        return this;
+    }
+
+    let messageCount = parseInt($("#message-count").val());
+    let alreadyLoadedMessageCount = parseInt($("#already-loaded-message-count").val());
+    $(".load-more-messages").click(async () => {
+        const formData = new FormData(form);
+        try {
+            const response = await fetch('/web-chat/load-more-messages', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            // console.log('Success:', data);
+            let assumedMessageCount = alreadyLoadedMessageCount + messageCount;
+            for (let i = data.Messages.length - 1; i >= 0; i--) {
+                // console.log('data: ', data.Messages[i]);
+                let _messageElement = renderMessageElement(data.Messages[i]);
+                messagesBox.insertAt(1, _messageElement);
+            }
+            if (data.Messages.length === 0 || assumedMessageCount !== alreadyLoadedMessageCount) {
+                $(".load-more-messages").remove();
+                $(".no-more-messages").show();
+            }
+            // messagesBox.scrollTop(messagesBox.children()[1].clientHeight * (assumedMessageCount - alreadyLoadedMessageCount));
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
+
+
+    });
 </script>
+
+@* Рендер всех сообщений через JS *@
+@* @{ *@
+@*     var jsonSerializerSettings = new JsonSerializerSettings *@
+@*                                  { *@
+@*                                      DateFormatString = *@
+@*                                          "dd.MM.yyyy HH:mm:ss", *@
+@*                                      DateTimeZoneHandling = *@
+@*                                          DateTimeZoneHandling.Utc, *@
+@*                                  }; *@
+@* } *@
+@* <script> let jsonString = ``;</script> *@
+@* @foreach (var message in Model.Messages) *@
+@* { *@
+@*     <script> *@
+@*         @{ *@
+@*             var json = JsonConvert.SerializeObject(message, jsonSerializerSettings); *@
+@*         } *@
+@*         jsonString = `@json`.replaceAll("&quot;", "\""); *@
+@*         receiveMessage(jsonString); *@
+@*     </script> *@
+@* }     *@

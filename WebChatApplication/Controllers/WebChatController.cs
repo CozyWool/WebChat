@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using WebChatApplication.Models;
 using WebChatApplication.Services;
 
@@ -19,21 +20,21 @@ public class WebChatController : Controller
     }
 
     [AllowAnonymous]
-    [Route("/{chatIndex:int?}")]
+    [Route("/")]
     [HttpGet("index")]
-    public async Task<IActionResult> Index(int chatIndex = 0)
+    public async Task<IActionResult> Index(Guid? chatId)
     {
         ViewData["Title"] = "Веб-чат";
         if (!User.Identity.IsAuthenticated)
         {
             return View(new WebChatViewModel());
         }
-    
-        var model = await _chatService.GetChatsByUsername(User.Identity.Name, chatIndex);
+
+        var model = await _chatService.GetChatsByUsername(User.Identity.Name, chatId);
         return View(model);
     }
 
-    [Route("private-chat/{userId:guid}")]
+    [HttpGet("private-chat/{userId:guid}")]
     public async Task<IActionResult> PrivateChat(Guid userId)
     {
         ViewData["Title"] = "Чаты";
@@ -46,6 +47,22 @@ public class WebChatController : Controller
         }
 
         return View(model);
+    }
+
+    [HttpPost("load-more-messages")]
+    public async Task<IActionResult> LoadMoreMessages(Guid chatId, int messageCount, int alreadyLoadedMessageCount)
+    {
+        var result = await _chatService.GetChatById(chatId, messageCount, alreadyLoadedMessageCount);
+        var jsonSerializerSettings = new JsonSerializerSettings
+                                     {
+                                         DateFormatString = "dd.MM.yyyy HH:mm:ss",
+                                         DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                                     };
+        return new ContentResult
+               {
+                   Content = JsonConvert.SerializeObject(result, jsonSerializerSettings),
+                   ContentType = "application/json"
+               };
     }
 
     [HttpDelete("delete-message/{id:guid}")]

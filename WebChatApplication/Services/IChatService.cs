@@ -5,9 +5,9 @@ namespace WebChatApplication.Services;
 
 public interface IChatService
 {
-    Task<ChatModel?> GetChatById(Guid chatId, int messageCount);
+    Task<ChatModel?> GetChatById(Guid chatId, int messageCount, int alreadyLoadedMessageCount);
     Task<PrivateChatModel?> GetPrivateChatByUserId(Guid userId);
     Task<ChatEntity?> CreatePrivateChat(Guid userId);
     Task<Guid?> CreateGroupChat(List<Guid> userIds);
-    Task<WebChatViewModel> GetChatsByUsername(string? username, int chatIndex);
+    Task<WebChatViewModel> GetChatsByUsername(string? username, Guid? chatId, int messageCount = 50);
 }

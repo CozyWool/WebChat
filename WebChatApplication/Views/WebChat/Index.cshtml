@@ -68,14 +68,13 @@ else
         <div class="side-menu-container">
             <h5 class="text-center text-truncate">С возвращением,<br/> @User.Identity.Name!</h5>
             <div class="d-flex flex-column">
-                @for (var i = 0; i < Model.Chats.Count; i++)
+                @foreach (var chatModel in Model.Chats)
                 {
-                    var chatModel = Model.Chats[i];
                     if (chatModel is PrivateChatModel privateChatModel)
                     {
                         <div
                             class="@(Model.CurrentChat?.Id == privateChatModel.Id ? "side-menu-chat-info-selected" : "side-menu-chat-info")"
-                            onclick="location.href = '/web-chat/index?chatIndex=@i'">
+                            onclick="location.href = '/web-chat/index?chatId=@chatModel.Id'">
                             <div>
                                 <img src="@privateChatModel.PrivateUser.ProfilePictureUrl" class="profile-img"
                                      alt="...">
@@ -103,8 +102,9 @@ else
                                     <span class="mt-auto text-truncate side-menu-last-message">
                                         @(privateChatModel.Messages.LastOrDefault()?.Content ?? "Нет сообщений")
                                     </span>
-                                    <span
-                                        class="date-utc-span side-menu-last-message-sent-at">@(privateChatModel.Messages.LastOrDefault()?.SentAt.ToString() ?? "")</span>
+                                    <span class="date-utc-span side-menu-last-message-sent-at">
+                                        @(privateChatModel.Messages.LastOrDefault()?.SentAt.ToString() ?? "")
+                                    </span>
                                 </div>
                             </div>
 
@@ -112,7 +112,7 @@ else
                     }
                     else
                     {
-                        <a asp-controller="WebChat" asp-action="Index" asp-route-chatIndex="@i">
+                        <a asp-controller="WebChat" asp-action="Index" asp-route-chatId="@chatModel.Id">
                             @chatModel.Name - @chatModel.ChatType - @chatModel.Id
                         </a>
                     }
