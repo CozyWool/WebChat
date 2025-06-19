@@ -43,7 +43,7 @@ public class ChatHub : Hub
                                              DateTimeZoneHandling.Utc,
                                      };
         var messageModel = JsonConvert.DeserializeObject<MessageModel>(messageJson, jsonSerializerSettings);
-        var chat = await _chatService.GetChatById(chatId, 0);
+        var chat = await _chatService.GetChatById(chatId, 0, 0);
         var currentUserId = _currentUserService.CurrentUserId;
         if (currentUserId is null || chat is null)
         {
@@ -56,6 +56,7 @@ public class ChatHub : Hub
         messageEntity.UserId = currentUserId.Value;
         messageEntity.ParentMessage = null;
         messageEntity.User = null;
+        messageEntity.SentAt = DateTime.UtcNow;
 
         await _context.Messages.AddAsync(messageEntity);
         await _context.SaveChangesAsync();
@@ -68,7 +69,7 @@ public class ChatHub : Hub
 
     public async Task DeleteMessage(Guid chatId, Guid messageId)
     {
-        var chat = await _chatService.GetChatById(chatId, 0);
+        var chat = await _chatService.GetChatById(chatId, 0, 0);
         var currentUserId = _currentUserService.CurrentUserId;
         if (currentUserId is null || chat is null)
         {

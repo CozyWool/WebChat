@@ -22,10 +22,10 @@ public class ChatService : IChatService
         _userRepository = userRepository;
     }
 
-    public async Task<ChatModel?> GetChatById(Guid chatId, int messageCount = 50)
+    public async Task<ChatModel?> GetChatById(Guid chatId, int messageCount = 50, int alreadyLoadedMessageCount = 0)
     {
         var currentUser = await _currentUserService.GetCurrentUser();
-        var chatEntity = await _chatRepository.GetById(chatId, messageCount);
+        var chatEntity = await _chatRepository.GetById(chatId, messageCount, alreadyLoadedMessageCount);
         if (currentUser is null || chatEntity is null)
         {
             return null;
@@ -82,6 +82,12 @@ public class ChatService : IChatService
             }
         }
 
+        chatEntity.Messages = chatEntity
+                              .Messages
+                              .OrderBy(x => x.SentAt)
+                              .TakeLast(50)
+                              .ToList();
+
         var chatModel = _mapper.Map<ChatModel>(chatEntity);
         var privateChatModel = _mapper.Map<PrivateChatModel>(chatModel);
         return privateChatModel;
@@ -112,7 +118,7 @@ public class ChatService : IChatService
         throw new NotImplementedException();
     }
 
-    public async Task<WebChatViewModel> GetChatsByUsername(string? username, int chatIndex)
+    public async Task<WebChatViewModel> GetChatsByUsername(string? username, Guid? chatId, int messageCount = 50)
     {
         var chats = await _chatRepository.GetCurrentUserChats();
         var mappedChats = _mapper.Map<List<ChatModel>>(chats);
@@ -145,12 +151,14 @@ public class ChatService : IChatService
                     mappedChats[i] = privateChatModel;
                     break;
             }
+
+            mappedChats[i].Messages = mappedChats[i].Messages.TakeLast(messageCount).ToList();
         }
 
 
         var model = new WebChatViewModel
                     {
-                        CurrentChat = chatIndex < mappedChats.Count ? mappedChats[chatIndex] : null,
+                        CurrentChat = chatId is null ? null : mappedChats.FirstOrDefault(x => x.Id == chatId),
                         Chats = mappedChats
                     };
         return model;

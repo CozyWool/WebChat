@@ -36,10 +36,10 @@ public class Startup(IConfiguration configuration)
 
         services.AddScoped<IChatService, ChatService>();
         services.AddScoped<IChatRepository, ChatRepository>();
-        
+
         services.AddScoped<IMessageService, MessageService>();
         services.AddScoped<IMessageRepository, MessageRepository>();
-        
+
         services.AddSignalR();
 
         services.AddFluentEmail(configuration);
@@ -88,7 +88,7 @@ public class Startup(IConfiguration configuration)
         app.UseEndpoints(endpoints =>
                          {
                              endpoints.MapControllerRoute("default",
-                                                          "{controller=WebChat}/{action=Index}/{chatIndex:int?}");
+                                                          "{controller=WebChat}/{action=Index}");
                              endpoints.MapHub<ChatHub>("/chatHub");
                              if (env.IsDevelopment())
                              {

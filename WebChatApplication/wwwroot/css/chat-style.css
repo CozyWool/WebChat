@@ -1,6 +1,12 @@
 ﻿.load-more-messages {
-    align-self: center;
+    margin-left: auto;
+    margin-right: auto;
     border-radius: 20px;
+}
+
+.no-more-messages {
+    display: none;
+    color: gray;
 }
 
 .receiver-info {
