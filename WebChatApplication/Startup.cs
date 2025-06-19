@@ -57,6 +57,7 @@ public class Startup(IConfiguration configuration)
 
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseStatusCodePagesWithRedirects("/error/{0}");
 
         app.UseAuthentication();
         app.UseAuthorization();

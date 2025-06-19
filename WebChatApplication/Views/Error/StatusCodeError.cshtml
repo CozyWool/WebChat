@@ -1,0 +1,13 @@
+﻿@model WebChatApplication.Models.ErrorViewModel
+
+<div class="container" style="text-align: center;  color: #888;">
+    <h1 style="font-size: 150px; color: #888; margin-bottom: 0px;">@Model.StatusCode</h1>
+    <p style="font-size: 50px; ">@Model.Title</p>
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <p>@Model.Message</p>
+    }
+    <a class="btn btn-secondary" asp-controller="WebChat" asp-action="Index">
+        Вернуться на главную
+    </a>
+</div>
