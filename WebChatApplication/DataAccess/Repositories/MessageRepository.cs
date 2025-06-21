@@ -13,6 +13,30 @@ public class MessageRepository : IMessageRepository
         _dbContext = dbContext;
     }
 
+    public async Task Create(MessageEntity? entity)
+    {
+        if (entity is null)
+        {
+            return;
+        }
+
+        await _dbContext.Messages.AddAsync(entity);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task Update(MessageEntity entity)
+    {
+        var oldEntity = await GetById(entity.Id);
+        if (oldEntity is null)
+        {
+            return;
+        }
+        oldEntity.Content = entity.Content;
+        oldEntity.UpdatedAt = entity.UpdatedAt;
+        _dbContext.Messages.Update(oldEntity);
+        await _dbContext.SaveChangesAsync();
+    }
+
     public async Task<bool> Delete(Guid id)
     {
         var entity = await GetById(id);

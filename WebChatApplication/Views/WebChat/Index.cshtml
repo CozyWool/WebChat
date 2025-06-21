@@ -47,12 +47,16 @@
         margin-right: 10px;
         overflow-x: hidden;
         height: 75vh;
-        width: 30vw;
+        width: 100%;
+        min-width: 20vw;
+        max-width: 20vw;
     }
 
 
     .current-chat-container {
-        width: 80vw;
+        width: 100%;
+        min-width: 55vw;
+        max-width: 55vw;
     }
 </style>
 @if (!User.Identity.IsAuthenticated)
@@ -76,7 +80,7 @@ else
                             class="@(Model.CurrentChat?.Id == privateChatModel.Id ? "side-menu-chat-info-selected" : "side-menu-chat-info")"
                             onclick="location.href = '/web-chat/index?chatId=@chatModel.Id'">
                             <div>
-                                <img src="@privateChatModel.PrivateUser.ProfilePictureUrl" class="profile-img"
+                                <img src="@privateChatModel.PrivateUser.ProfilePictureUrl" class="chat-profile-img"
                                      alt="...">
                             </div>
                             <div class="ms-3 d-flex flex-column">
