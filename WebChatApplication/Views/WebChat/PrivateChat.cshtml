@@ -8,7 +8,7 @@
                                  "Account",
                                  new {username = Model.PrivateUser.Username},
                                  Context.Request.Scheme)">
-                <img src="@Model.PrivateUser.ProfilePictureUrl" class="profile-img" alt="..."></a>
+                <img src="@Model.PrivateUser.ProfilePictureUrl" class="chat-profile-img" alt=""></a>
         </div>
         <h4 class="ms-4 mt-auto mb-auto text-truncate">@Model.PrivateUser.Username</h4>
         <div class="ms-auto">
@@ -52,7 +52,7 @@
                                          "Account",
                                          new {username = message.Author.Username},
                                          Context.Request.Scheme)">
-                        <img src="@message.Author.ProfilePictureUrl" class="profile-img" alt="..."></a>
+                        <img src="@message.Author.ProfilePictureUrl" class="chat-profile-img" alt="..."></a>
                 </div>
                 <div class="message-container">
                     <div>
@@ -79,7 +79,14 @@
                     }
                     <div>
                         <span class="message-content">@message.Content</span>
-                        <span class="date-utc-span sent-at-span">@message.SentAt.ToString()</span>
+                        <span class="date-utc-span sent-at-span"
+                              data-sent-at="@message.SentAt.ToString()">
+                            @message.SentAt.ToString()
+                        </span>
+                        <span class="updated-span"
+                              data-updated-at="@message.UpdatedAt.ToString()">
+                            @(message.UpdatedAt is null ? "" : "изменено")
+                        </span>
                     </div>
                 </div>
             </div>
@@ -99,6 +106,22 @@
                     </div>
                 </div>
                 <i id="send-message-close-reply-button" style="z-index: 2"
+                   class="fa-solid fa-xmark float-end ms-auto me-3 mt-auto mb-auto"></i>
+            </div>
+        </div>
+
+        <div class="reply quote-like quote-like-hoverable quote-like-border mb-2" id="send-message-edit-container">
+            <div class="c-ripple"></div>
+            <div class="reply-content" style="display: flex">
+                <div style="width: 95%;">
+                    <div class="reply-title">
+                        <span id="send-message-edit-title">В ответ </span>
+                    </div>
+                    <div class="reply-subtitle">
+                        <span id="send-message-edit-subtitle">Контент тут</span>
+                    </div>
+                </div>
+                <i id="send-message-close-edit-button" style="z-index: 2"
                    class="fa-solid fa-xmark float-end ms-auto me-3 mt-auto mb-auto"></i>
             </div>
         </div>
@@ -136,6 +159,13 @@
                 <div class="context-menu-item" id="context-menu-delete-button">
                     <div class="context-menu-name">
                         <i class="fa-solid fa-trash me-2"></i> Удалить
+                    </div>
+                </div>
+            </div>
+            <div class="context-menu-section" id="context-menu-updated-at-section">
+                <div class="context-menu-item-readonly">
+                    <div class="context-menu-name">
+                        <i class="fa-solid fa-edit me-2"></i><span class="updated-span" id="context-menu-updated-at-span"></span>
                     </div>
                 </div>
             </div>

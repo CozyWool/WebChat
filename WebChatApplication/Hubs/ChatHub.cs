@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using WebChatApplication.DataAccess.Contexts;
 using WebChatApplication.DataAccess.Entities;
+using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Models;
 using WebChatApplication.Models.User;
 using WebChatApplication.Services;
@@ -16,16 +17,19 @@ public class ChatHub : Hub
     private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
     private readonly ApplicationDbContext _context;
+    private readonly IMessageRepository _messageRepository;
 
     public ChatHub(IChatService chatService,
                    ICurrentUserService currentUserService,
                    IMapper mapper,
-                   ApplicationDbContext context)
+                   ApplicationDbContext context,
+                   IMessageRepository messageRepository)
     {
         _chatService = chatService;
         _currentUserService = currentUserService;
         _mapper = mapper;
         _context = context;
+        _messageRepository = messageRepository;
     }
 
     public async Task JoinChat(Guid chatId)
@@ -58,12 +62,39 @@ public class ChatHub : Hub
         messageEntity.User = null;
         messageEntity.SentAt = DateTime.UtcNow;
 
-        await _context.Messages.AddAsync(messageEntity);
-        await _context.SaveChangesAsync();
+        await _messageRepository.Create(messageEntity);
 
         await Clients
               .OthersInGroup(groupName: chatId.ToString())
               .SendAsync(method: "ReceiveMessage",
+                         JsonConvert.SerializeObject(messageModel, jsonSerializerSettings));
+    }
+
+    public async Task EditMessage(Guid chatId, string messageJson)
+    {
+        var jsonSerializerSettings = new JsonSerializerSettings
+                                     {
+                                         DateFormatString =
+                                             "dd.MM.yyyy HH:mm:ss",
+                                         DateTimeZoneHandling =
+                                             DateTimeZoneHandling.Utc,
+                                     };
+        var messageModel = JsonConvert.DeserializeObject<MessageModel>(messageJson, jsonSerializerSettings);
+        var chat = await _chatService.GetChatById(chatId, 0, 0);
+        var currentUserId = _currentUserService.CurrentUserId;
+        if (currentUserId is null || chat is null)
+        {
+            return;
+        }
+
+        var messageEntity = _mapper.Map<MessageEntity>(messageModel);
+        messageEntity.UpdatedAt = DateTime.UtcNow;
+
+        await _messageRepository.Update(messageEntity);
+
+        await Clients
+              .OthersInGroup(groupName: chatId.ToString())
+              .SendAsync(method: "ReceiveEditedMessage",
                          JsonConvert.SerializeObject(messageModel, jsonSerializerSettings));
     }
 
@@ -75,7 +106,7 @@ public class ChatHub : Hub
         {
             return;
         }
-        
+
         await Clients
               .OthersInGroup(groupName: chatId.ToString())
               .SendAsync(method: "DeleteMessage",

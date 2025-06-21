@@ -30,7 +30,7 @@
     padding: 20px;
 }
 
-.profile-img {
+.chat-profile-img {
     width: 36px;
     height: 36px;
     border-radius: 100%;
@@ -76,7 +76,13 @@
 }
 
 .sent-at-span {
-    padding-left: 25px;
+    padding-left: 5px;
+    float: right;
+    align-self: center;
+    color: gray;
+    white-space: nowrap;
+}
+.updated-span {
     float: right;
     align-self: center;
     color: gray;
@@ -107,6 +113,7 @@
     border-radius: 20px;
     background-color: #f1f1f1;
     padding: 10px;
+    resize: none;
 }
 
 .message-field:focus {
@@ -120,7 +127,8 @@
 }
 
 .context-menu {
-    width: 200px;
+    z-index: 10;
+    width: 250px;
     height: fit-content;
     min-height: 150px;
     background: white;
@@ -162,10 +170,15 @@
     padding: 10px 20px;
     cursor: pointer;
 }
-
-.context-menu-item:hover {
-    background: rgba(0, 0, 0, 0.07);
+.context-menu-item-readonly {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 10px 20px;
 }
+
 
 .context-menu-name {
     width: fit-content;

@@ -1,5 +1,4 @@
-﻿@using Newtonsoft.Json
-@model WebChatApplication.Models.PrivateChatModel
+﻿@model WebChatApplication.Models.PrivateChatModel
 
 
 <script>
@@ -8,13 +7,21 @@
     let contextMenuEditButton = document.querySelector("#context-menu-edit-button");
     let contextMenuForwardButton = document.querySelector("#context-menu-forward-button");
     let contextMenuDeleteButton = document.querySelector("#context-menu-delete-button");
+    let contextMenuUpdatedAtSection = document.querySelector("#context-menu-updated-at-section");
+    let contextMenuUpdatedAtSpan = document.querySelector("#context-menu-updated-at-span");
     let selectedMessage = null;
-    let replyMessage = null;
+    let replyingMessage = null;
+    let editingMessage = null;
 
     let sendMessageReplyContainer = document.querySelector("#send-message-reply-container");
     let sendMessageReplyTitle = document.querySelector("#send-message-reply-title");
     let sendMessageReplySubtitle = document.querySelector("#send-message-reply-subtitle");
     sendMessageReplyContainer.style.display = "none";
+
+    let sendMessageEditContainer = document.querySelector("#send-message-edit-container");
+    let sendMessageEditTitle = document.querySelector("#send-message-edit-title");
+    let sendMessageEditSubtitle = document.querySelector("#send-message-edit-subtitle");
+    sendMessageEditContainer.style.display = "none";
 
     let intiHeight = contextMenu.offsetHeight;
     let initWidth = contextMenu.offsetWidth;
@@ -25,7 +32,7 @@
     document.querySelectorAll('.reply-span').forEach(replySpanEventHandler);
 
     contextMenuReplyButton.addEventListener("click", replyClick)
-    contextMenuReplyButton.addEventListener("click", editClick)
+    contextMenuEditButton.addEventListener("click", editClick)
     contextMenuForwardButton.addEventListener("click", forwardClick)
     contextMenuDeleteButton.addEventListener("click", deleteClick)
 
@@ -34,6 +41,7 @@
         contextMenu.style.display = "none";
     });
     $("#send-message-close-reply-button").click(closeReplyBox);
+    $("#send-message-close-edit-button").click(closeEditBox);
 
     function replySpanEventHandler(el) {
         const messageId = el.dataset.messageId;
@@ -52,7 +60,15 @@
 
     function closeReplyBox() {
         sendMessageReplyContainer.style.display = "none";
-        replyMessage = null;
+        replyingMessage = null;
+    }
+
+    function closeEditBox() {
+        sendMessageEditContainer.style.display = "none";
+        editMessageInputContainer.style.display = "none";
+        sendMessageInputContainer.style.display = "block";
+        editMessageField.value = null;
+        editingMessage = null;
     }
 
     function contextMenuEventHandler(e) {
@@ -60,13 +76,38 @@
         const clickedElement = $(e.currentTarget)
         const parentElement = clickedElement.parent(".message");
         const messageId = parentElement.prevObject.attr("id");
-        // console.log("messageId: ", messageId)
+        const messageAuthor = parentElement.prevObject.find(".message-username")[0].textContent.trim();
+        const messageContent = parentElement.prevObject.find(".message-content")[0].textContent.trim();
+        const messageSentAt = parentElement.prevObject.find(".sent-at-span")[0].dataset.sentAt;
         selectedMessage = {
             id: messageId,
-            authorUsername: parentElement.prevObject.find(".message-username")[0].textContent,
-            content: parentElement.prevObject.find(".message-content")[0].textContent
+            authorUsername: messageAuthor,
+            content: messageContent,
+            sentAt: messageSentAt,
+            updatedAt: null,
+            parentMessage: null
         }
 
+        const messageUpdatedSpan = parentElement.prevObject.find(".updated-span")[0];
+        if (messageUpdatedSpan) {
+            const messageUpdatedAt = messageUpdatedSpan.dataset.updatedAt;
+            if (messageUpdatedAt !== "" && messageUpdatedAt !== null) {
+                selectedMessage.updatedAt = messageUpdatedAt;
+            }
+        }
+
+        const parentMessage = parentElement.prevObject.find(".reply")[0];
+        if (parentMessage) {
+            const parentMessageId = parentMessage.dataset.parentMessageId;
+            const parentMessageAuthor = parentElement.prevObject.find(".reply-title")[0].textContent.trim();
+            const parentMessageContent = parentElement.prevObject.find(".reply-subtitle")[0].textContent.trim();
+            selectedMessage.parentMessage = {
+                id: parentMessageId,
+                authorUsername: parentMessageAuthor,
+                content: parentMessageContent
+            }
+        }
+        console.log("selected: ", selectedMessage);
         openMenu(e);
     }
 
@@ -101,19 +142,43 @@
             contextMenu.style.right = wWidth - positionX + "px";
             contextMenu.style.left = "auto";
         }
+        if (selectedMessage.authorUsername !== currentUsername) {
+            contextMenuDeleteButton.style.display = "none";
+            contextMenuEditButton.style.display = "none";
+        } else {
+            contextMenuDeleteButton.style.display = "block";
+            contextMenuEditButton.style.display = "block";
+        }
+
+        if (selectedMessage.updatedAt !== null) {
+            contextMenuUpdatedAtSection.style.display = "block";
+            contextMenuUpdatedAtSpan.innerHTML = `Изменено ${formatDateTime(toLocalTime(selectedMessage.updatedAt))}`
+        } else {
+            contextMenuUpdatedAtSection.style.display = "none";
+        }
+
         contextMenu.style.display = "block";
     }
 
     function replyClick() {
-        replyMessage = {...selectedMessage};
-        // console.log("Reply button with id: ", replyMessage.id);
-        sendMessageReplyTitle.innerHTML = `В ответ ${replyMessage.authorUsername}`;
-        sendMessageReplySubtitle.innerHTML = replyMessage.content;
+        replyingMessage = {...selectedMessage};
+        sendMessageReplyTitle.innerHTML = `В ответ ${replyingMessage.authorUsername}`;
+        sendMessageReplySubtitle.innerHTML = replyingMessage.content;
         sendMessageReplyContainer.style.display = "block";
+        closeEditBox();
     }
 
     function editClick() {
-        console.log("Edit button with id: ", selectedMessage.id);
+        editingMessage = {...selectedMessage};
+        editMessageInputContainer.style.display = "block";
+        editMessageField.val(editingMessage.content);
+
+        sendMessageEditTitle.innerHTML = `Редактирование`;
+        sendMessageEditSubtitle.innerHTML = editingMessage.content;
+        sendMessageEditContainer.style.display = "block";
+
+        sendMessageInputContainer.style.display = "none";
+        closeReplyBox();
     }
 
     function forwardClick() {
@@ -139,11 +204,10 @@
             console.log(error);
             alert('Произошла ошибка при удалении/Нет доступа');
         }
-        // console.log("Delete button with id: ", selectedMessage.id);
     }
 
     function deleteMessage(messageId) {
-        if (replyMessage !== null && messageId === replyMessage.id) {
+        if (replyingMessage !== null && messageId === replyingMessage.id) {
             closeReplyBox();
         }
         const element = document.getElementById(messageId);
@@ -180,7 +244,50 @@
     });
 
     function editMessage() {
+        try {
+            const content = editMessageField.val();
+            const messageId = editingMessage.id;
 
+            if (content === "") {
+                return;
+            }
+
+            const message = {
+                Id: messageId,
+                SentAt: editingMessage.sentAt,
+                UpdatedAt: new Date(Date.now() + (new Date()).getTimezoneOffset() * 60 * 1000).toLocaleString('ru', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }).replace(',', ''),
+                Content: content,
+                Author: {
+                    Id: currentUserId,
+                    Username: currentUsername,
+                    ProfilePictureUrl: currentUserProfilePictureUrl
+                },
+                ParentMessage: null
+            }
+            if (editingMessage.parentMessage !== null) {
+                message.ParentMessage = {
+                    Id: editingMessage.parentMessage.id,
+                    Content: editingMessage.parentMessage.content,
+                    Author: {
+                        Username: editingMessage.parentMessage.authorUsername
+                    }
+                }
+            }
+
+            closeEditBox();
+            sendMessageField.focus();
+            connection.invoke("EditMessage", chatId, JSON.stringify(message));
+            receiveEditedMessage(message);
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     function sendMessage() {
@@ -202,6 +309,7 @@
                     minute: '2-digit',
                     second: '2-digit'
                 }).replace(',', ''),
+                UpdatedAt: null,
                 Content: content,
                 Author: {
                     Id: currentUserId,
@@ -211,13 +319,13 @@
                 ParentMessage: null
             }
 
-            if (replyMessage !== null) {
+            if (replyingMessage !== null) {
                 message.ParentMessage = {
-                    Id: replyMessage.id,
+                    Id: replyingMessage.id,
                     Author: {
-                        Username: replyMessage.authorUsername
+                        Username: replyingMessage.authorUsername
                     },
-                    Content: replyMessage.content
+                    Content: replyingMessage.content
                 };
             }
             closeReplyBox();
@@ -243,11 +351,12 @@
         if (e.which === 13 && !e.shiftKey) {
             e.preventDefault();
 
-            sendMessage();
+            editMessage();
         }
     });
 
     connection.on("ReceiveMessage", receiveMessage);
+    connection.on("ReceiveEditedMessage", receiveEditedMessage);
     connection.on("DeleteMessage", deleteMessage);
 
     function receiveMessage(message) {
@@ -257,6 +366,8 @@
             }
             console.log("Received message", message);
             let _messageElement = renderMessageElement(message);
+            alreadyLoadedMessageCount += 1;
+            $("#already-loaded-message-count").val(alreadyLoadedMessageCount);
 
             messagesBox.append(_messageElement);
             messagesBox[0].lastElementChild.addEventListener("contextmenu", contextMenuEventHandler);
@@ -265,6 +376,30 @@
             if (message.Author.Id == currentUserId) {
                 messagesBox.scrollTop(messagesBox[0].scrollHeight);
             }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function receiveEditedMessage(message) {
+        try {
+            if (typeof message === "string") {
+                message = JSON.parse(message);
+            }
+            console.log("Received edited message", message);
+            let _messageElement = renderMessageElement(message);
+            let messageIndex = 0;
+            for (let i = 0; i < messagesBox.children().length; i++) {
+                if (messagesBox.children()[i].id === message.Id) {
+                    messageIndex = i;
+                    messagesBox.children()[i].remove();
+                    break;
+                }
+            }
+            messagesBox.insertAt(messageIndex, _messageElement);
+            messagesBox.children()[messageIndex].addEventListener("contextmenu", contextMenuEventHandler);
+            messagesBox.children()[messageIndex].querySelectorAll('.reply-span').forEach(replySpanEventHandler);
+
         } catch (error) {
             console.error(error);
         }
@@ -310,7 +445,7 @@
     <div class="message ${messageClass}" id="${message.Id}">
         <div class="profile-img-container">
             <a href="${authorProfileInfoUrl}">
-                <img src="${message.Author.ProfilePictureUrl}" class="profile-img" alt="...">
+                <img src="${message.Author.ProfilePictureUrl}" class="chat-profile-img" alt="...">
             </a>
         </div>
 
@@ -324,12 +459,11 @@
             ${parentMessageElement}
             <div>
                 <span class="message-content">${content}</span>
-                <span class="sent-at-span">${formatDateTime(toLocalTime(message.SentAt))}</span>
+                <span class="sent-at-span" data-sent-at="${message.SentAt}">${formatDateTime(toLocalTime(message.SentAt))}</span>
+                <span class="updated-span" data-updated-at="${message.UpdatedAt}">${(message.UpdatedAt !== null ? "изменено" : "")}</span>
             </div>
         </div>
     </div>`
-        alreadyLoadedMessageCount += 1;
-        $("#already-loaded-message-count").val(alreadyLoadedMessageCount);
         return messageElement;
     }
 </script>
@@ -376,6 +510,8 @@
                 let _messageElement = renderMessageElement(data.Messages[i]);
                 messagesBox.insertAt(1, _messageElement);
             }
+            alreadyLoadedMessageCount += data.Messages.length;
+            $("#already-loaded-message-count").val(alreadyLoadedMessageCount);
             if (data.Messages.length === 0 || assumedMessageCount !== alreadyLoadedMessageCount) {
                 $(".load-more-messages").remove();
                 $(".no-more-messages").show();
