@@ -34,7 +34,7 @@ public class WebChatController : Controller
         return View(model);
     }
 
-    [HttpGet("private-chat/{userId:guid}")]
+    [HttpPost("private-chat/{userId:guid}")]
     public async Task<IActionResult> PrivateChat(Guid userId)
     {
         ViewData["Title"] = "Чаты";
@@ -46,7 +46,7 @@ public class WebChatController : Controller
                         new StatusMessageModel("Произошла ошибка при открытии чата", true));
         }
 
-        return View(model);
+        return RedirectToAction("Index", "WebChat", new {chatId = model.Id});
     }
 
     [HttpPost("load-more-messages")]
