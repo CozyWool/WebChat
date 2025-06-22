@@ -1,220 +1,6 @@
 ﻿@model WebChatApplication.Models.PrivateChatModel
 
-
-<script>
-    let contextMenu = document.querySelector(".context-menu");
-    let contextMenuReplyButton = document.querySelector("#context-menu-reply-button");
-    let contextMenuEditButton = document.querySelector("#context-menu-edit-button");
-    let contextMenuForwardButton = document.querySelector("#context-menu-forward-button");
-    let contextMenuDeleteButton = document.querySelector("#context-menu-delete-button");
-    let contextMenuUpdatedAtSection = document.querySelector("#context-menu-updated-at-section");
-    let contextMenuUpdatedAtSpan = document.querySelector("#context-menu-updated-at-span");
-    let selectedMessage = null;
-    let replyingMessage = null;
-    let editingMessage = null;
-
-    let sendMessageReplyContainer = document.querySelector("#send-message-reply-container");
-    let sendMessageReplyTitle = document.querySelector("#send-message-reply-title");
-    let sendMessageReplySubtitle = document.querySelector("#send-message-reply-subtitle");
-    sendMessageReplyContainer.style.display = "none";
-
-    let sendMessageEditContainer = document.querySelector("#send-message-edit-container");
-    let sendMessageEditTitle = document.querySelector("#send-message-edit-title");
-    let sendMessageEditSubtitle = document.querySelector("#send-message-edit-subtitle");
-    sendMessageEditContainer.style.display = "none";
-
-    let intiHeight = contextMenu.offsetHeight;
-    let initWidth = contextMenu.offsetWidth;
-    contextMenu.style.display = "none";
-    document.querySelectorAll('.message').forEach(element => {
-        element.addEventListener("contextmenu", contextMenuEventHandler);
-    });
-    document.querySelectorAll('.reply-span').forEach(replySpanEventHandler);
-
-    contextMenuReplyButton.addEventListener("click", replyClick)
-    contextMenuEditButton.addEventListener("click", editClick)
-    contextMenuForwardButton.addEventListener("click", forwardClick)
-    contextMenuDeleteButton.addEventListener("click", deleteClick)
-
-
-    window.addEventListener("click", () => {
-        contextMenu.style.display = "none";
-    });
-    $("#send-message-close-reply-button").click(closeReplyBox);
-    $("#send-message-close-edit-button").click(closeEditBox);
-
-    function replySpanEventHandler(el) {
-        const messageId = el.dataset.messageId;
-        if (messageId) {
-            el.addEventListener("click", () => {
-                let parentElement = el.parentElement.parentElement;
-                selectedMessage = {
-                    id: messageId,
-                    authorUsername: parentElement.querySelector(".message-username").textContent,
-                    content: parentElement.querySelector(".message-content").textContent
-                }
-                replyClick()
-            });
-        }
-    }
-
-    function closeReplyBox() {
-        sendMessageReplyContainer.style.display = "none";
-        replyingMessage = null;
-    }
-
-    function closeEditBox() {
-        sendMessageEditContainer.style.display = "none";
-        editMessageInputContainer.style.display = "none";
-        sendMessageInputContainer.style.display = "block";
-        editMessageField.value = null;
-        editingMessage = null;
-    }
-
-    function contextMenuEventHandler(e) {
-        e.preventDefault();
-        const clickedElement = $(e.currentTarget)
-        const parentElement = clickedElement.parent(".message");
-        const messageId = parentElement.prevObject.attr("id");
-        const messageAuthor = parentElement.prevObject.find(".message-username")[0].textContent.trim();
-        const messageContent = parentElement.prevObject.find(".message-content")[0].textContent.trim();
-        const messageSentAt = parentElement.prevObject.find(".sent-at-span")[0].dataset.sentAt;
-        selectedMessage = {
-            id: messageId,
-            authorUsername: messageAuthor,
-            content: messageContent,
-            sentAt: messageSentAt,
-            updatedAt: null,
-            parentMessage: null
-        }
-
-        const messageUpdatedSpan = parentElement.prevObject.find(".updated-span")[0];
-        if (messageUpdatedSpan) {
-            const messageUpdatedAt = messageUpdatedSpan.dataset.updatedAt;
-            if (messageUpdatedAt !== "" && messageUpdatedAt !== null) {
-                selectedMessage.updatedAt = messageUpdatedAt;
-            }
-        }
-
-        const parentMessage = parentElement.prevObject.find(".reply")[0];
-        if (parentMessage) {
-            const parentMessageId = parentMessage.dataset.parentMessageId;
-            const parentMessageAuthor = parentElement.prevObject.find(".reply-title")[0].textContent.trim();
-            const parentMessageContent = parentElement.prevObject.find(".reply-subtitle")[0].textContent.trim();
-            selectedMessage.parentMessage = {
-                id: parentMessageId,
-                authorUsername: parentMessageAuthor,
-                content: parentMessageContent
-            }
-        }
-        console.log("selected: ", selectedMessage);
-        openMenu(e);
-    }
-
-    function openMenu(e) {
-        let positionX = e.clientX;
-        let positionY = e.clientY;
-        let wHeight = window.innerHeight;
-        let wWidth = window.innerWidth;
-
-        let menuHeight = contextMenu.offsetHeight || intiHeight;
-        let menuWidth = contextMenu.offsetWidth || initWidth;
-
-        let availableHeight = wHeight - positionY;
-        let availableWidth = wWidth - positionX;
-
-        if (availableHeight >= menuHeight) {
-            contextMenu.style.top = positionY + "px";
-            contextMenu.style.bottom = "auto";
-        } else {
-            contextMenu.style.bottom = wHeight - positionY + "px";
-            contextMenu.style.top = "auto";
-            if (positionY < menuHeight) {
-                contextMenu.style.top = "0px";
-                contextMenu.style.bottom = "auto";
-            }
-        }
-
-        if (availableWidth >= menuWidth) {
-            contextMenu.style.left = positionX + "px";
-            contextMenu.style.right = "auto";
-        } else {
-            contextMenu.style.right = wWidth - positionX + "px";
-            contextMenu.style.left = "auto";
-        }
-        if (selectedMessage.authorUsername !== currentUsername) {
-            contextMenuDeleteButton.style.display = "none";
-            contextMenuEditButton.style.display = "none";
-        } else {
-            contextMenuDeleteButton.style.display = "block";
-            contextMenuEditButton.style.display = "block";
-        }
-
-        if (selectedMessage.updatedAt !== null) {
-            contextMenuUpdatedAtSection.style.display = "block";
-            contextMenuUpdatedAtSpan.innerHTML = `Изменено ${formatDateTime(toLocalTime(selectedMessage.updatedAt))}`
-        } else {
-            contextMenuUpdatedAtSection.style.display = "none";
-        }
-
-        contextMenu.style.display = "block";
-    }
-
-    function replyClick() {
-        replyingMessage = {...selectedMessage};
-        sendMessageReplyTitle.innerHTML = `В ответ ${replyingMessage.authorUsername}`;
-        sendMessageReplySubtitle.innerHTML = replyingMessage.content;
-        sendMessageReplyContainer.style.display = "block";
-        closeEditBox();
-    }
-
-    function editClick() {
-        editingMessage = {...selectedMessage};
-        editMessageInputContainer.style.display = "block";
-        editMessageField.val(editingMessage.content);
-
-        sendMessageEditTitle.innerHTML = `Редактирование`;
-        sendMessageEditSubtitle.innerHTML = editingMessage.content;
-        sendMessageEditContainer.style.display = "block";
-
-        sendMessageInputContainer.style.display = "none";
-        closeReplyBox();
-    }
-
-    function forwardClick() {
-        console.log("Forward button with id: ", selectedMessage.id);
-    }
-
-    async function deleteClick() {
-        try {
-            let confirmedDelete = confirm("Вы уверены, что хотите удалить это сообщение?")
-            if (!confirmedDelete) return
-            const response = await fetch(`/web-chat/delete-message/` + selectedMessage.id, {
-                method: "DELETE",
-                headers: {"Accept": "application/json", "Content-Type": "application/json"}
-            });
-            // console.log(response);
-            if (response.ok) {
-                deleteMessage(selectedMessage.id);
-                connection.invoke("DeleteMessage", chatId, selectedMessage.id);
-            } else {
-                alert('Произошла ошибка при удалении/Нет доступа');
-            }
-        } catch (error) {
-            console.log(error);
-            alert('Произошла ошибка при удалении/Нет доступа');
-        }
-    }
-
-    function deleteMessage(messageId) {
-        if (replyingMessage !== null && messageId === replyingMessage.id) {
-            closeReplyBox();
-        }
-        const element = document.getElementById(messageId);
-        element.parentNode.removeChild(element);
-    }
-</script>
-
+<partial name="_ContextMenuScripts"></partial>
 <script src="~/js/signalr.min.js"></script>
 
 <script>
@@ -460,7 +246,9 @@
             <div>
                 <span class="message-content">${content}</span>
                 <span class="sent-at-span" data-sent-at="${message.SentAt}">${formatDateTime(toLocalTime(message.SentAt))}</span>
-                <span class="updated-span" data-updated-at="${message.UpdatedAt}">${(message.UpdatedAt !== null ? "изменено" : "")}</span>
+                <span class="updated-span" data-updated-at="${(message.UpdatedAt !== null ? message.UpdatedAt : "")}">
+                    ${(message.UpdatedAt !== null ? "изменено" : "")}
+                </span>
             </div>
         </div>
     </div>`
@@ -509,6 +297,8 @@
                 // console.log('data: ', data.Messages[i]);
                 let _messageElement = renderMessageElement(data.Messages[i]);
                 messagesBox.insertAt(1, _messageElement);
+                messagesBox.children()[1].addEventListener("contextmenu", contextMenuEventHandler);
+                messagesBox.children()[1].querySelectorAll('.reply-span').forEach(replySpanEventHandler);
             }
             alreadyLoadedMessageCount += data.Messages.length;
             $("#already-loaded-message-count").val(alreadyLoadedMessageCount);
@@ -516,6 +306,7 @@
                 $(".load-more-messages").remove();
                 $(".no-more-messages").show();
             }
+
             // messagesBox.scrollTop(messagesBox.children()[1].clientHeight * (assumedMessageCount - alreadyLoadedMessageCount));
 
         } catch (error) {
