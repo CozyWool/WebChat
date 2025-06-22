@@ -8,7 +8,6 @@ using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Enums;
 using WebChatApplication.Helpers;
 using WebChatApplication.Messages;
-using WebChatApplication.Models;
 using WebChatApplication.Models.User;
 using WebChatApplication.Models.User.Email;
 using WebChatApplication.Models.User.Manage;
@@ -25,10 +24,12 @@ public class UserService : IUserService
     private readonly IS3Service _s3Service;
     private readonly IRoleService _roleService;
     private readonly IUserRepository _userRepository;
+    private readonly ICurrentUserService _currentUserService;
     private readonly IUserRelationRepository _userRelationRepository;
     private readonly IMapper _mapper;
 
     public UserService(IUserRepository userRepository,
+                       ICurrentUserService currentUserService,
                        IHttpContextAccessor httpContextAccessor,
                        IEmailService emailService,
                        IS3Service s3Service,
@@ -38,6 +39,7 @@ public class UserService : IUserService
                        IRoleService roleService)
     {
         _userRepository = userRepository;
+        _currentUserService = currentUserService;
         _httpContextAccessor = httpContextAccessor;
         _emailService = emailService;
         _s3Service = s3Service;
@@ -47,15 +49,17 @@ public class UserService : IUserService
         _roleService = roleService;
         _bucketId = _configuration.GetSection("MinioConfiguration").Get<MinioConfiguration>().BucketId;
 
-        if (!_httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
+        if (_httpContextAccessor.HttpContext == null || !_httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
         {
             return;
         }
 
-        var user = _userRepository.GetByEmailOrUsername(_httpContextAccessor.HttpContext.User.Identity.Name).Result;
-        var rememberMe = _httpContextAccessor.HttpContext
-                                             .User.HasClaim("RememberMe", true.ToString());
-        Authenticate(user, rememberMe);
+        var currentUser = _currentUserService.GetCurrentUser().Result;
+        var rememberMe = _httpContextAccessor
+                         .HttpContext
+                         .User
+                         .HasClaim("RememberMe", true.ToString());
+        _ = Authenticate(currentUser, rememberMe);
     }
 
     public async Task<UserServiceStatusCodes> Login(LoginModel model)
@@ -212,24 +216,10 @@ public class UserService : IUserService
         return UserServiceStatusCodes.OK;
     }
 
-    public async Task<UserServiceStatusCodes> ReAuthenticate(string? emailOrUsername)
-    {
-        var user = await _userRepository.GetByEmailOrUsername(emailOrUsername);
-        if (user is null)
-        {
-            return UserServiceStatusCodes.NotFound;
-        }
-
-        await Authenticate(user, _httpContextAccessor.HttpContext.User.HasClaim("RememberMe", true.ToString()));
-        return UserServiceStatusCodes.OK;
-    }
-
     public async Task<ProfileInfoModel?> GetUserProfile(string profileUsername)
     {
-        var currentUsername = _httpContextAccessor.HttpContext.User.Identity.Name;
-
         var profileUser = await _userRepository.GetByEmailOrUsername(profileUsername);
-        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+        var currentUser = await _currentUserService.GetCurrentUser();
         if (profileUser is null)
         {
             return null;
@@ -257,7 +247,8 @@ public class UserService : IUserService
                         IsOnline = IsOnline(profileUser.LastActivityAt),
                         UserStatus = profileUser.Status,
                         ProfilePictureUrl = await GetProfilePictureUrl(profileUser.Username),
-                        RelationToUser = relationToUser
+                        RelationToUser = relationToUser,
+                        UserId = profileUser.Id
                     };
 
 
@@ -282,119 +273,71 @@ public class UserService : IUserService
         return true;
     }
 
+    public async Task<UserCardModel?> GetUserCardById(Guid id)
+    {
+        var user = await _userRepository.GetById(id);
+        if (user is null)
+        {
+            return null;
+        }
+
+        return _mapper.Map<UserCardModel>(user);
+    }
+
     public async Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFiltered(
         FindUsersRequest request)
     {
-        var currentUsername = _httpContextAccessor.HttpContext.User.Identity.Name;
+        var currentUser = await _currentUserService.GetCurrentUser();
         var (users, count) = await _userRepository.GetUsersPagedSortedFiltered(pageNumber: request.PageNumber,
                                                                                pageSize: request.PageSize,
                                                                                sortOrder: request.SortOrder,
                                                                                username: request.Username,
                                                                                relationType: request.RelationType,
-                                                                               role: request.Role,
-                                                                               currentUsername: currentUsername);
+                                                                               role: request.RoleId,
+                                                                               currentUsername: currentUser?.Username);
+        
+        var mappedUsers = _mapper.Map<List<UserCardModel>>(users);
 
-
-        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
-
-        var items = FillUserAndRelationTypeRecordsList(users, currentUser);
-
-        var mappedItems = _mapper.Map<List<UserCardModel>>(items);
-
-        return (mappedItems, count);
+        return (mappedUsers, count);
     }
 
     public async Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFilteredByMultipleRoles(
         List<int> roles, FindUsersRequest request)
     {
-        var currentUsername = _httpContextAccessor.HttpContext.User.Identity.Name;
+        var currentUser = await _currentUserService.GetCurrentUser();
+
         var (users, count) = await _userRepository.GetUsersPagedSortedFilteredByMultipleRoles(
                                   request.PageNumber,
                                   request.PageSize,
                                   roles,
-                                  currentUsername,
+                                  currentUser?.Username,
                                   request.Username,
                                   request.SortOrder);
+        
+        var mappedUsers = _mapper.Map<List<UserCardModel>>(users);
 
-
-        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
-
-        var items = FillUserAndRelationTypeRecordsList(users, currentUser);
-
-        var mappedItems = _mapper.Map<List<UserCardModel>>(items);
-
-        return (mappedItems, count);
-    }
-
-    private static List<UserAndRelationTypeRecord> FillUserAndRelationTypeRecordsList(
-        List<UserEntity> users, UserEntity? currentUser)
-    {
-        var items = new List<UserAndRelationTypeRecord>();
-        foreach (var user in users)
-        {
-            var item = new UserAndRelationTypeRecord(user, UserRelationTypes.NotRelated);
-            if (currentUser is not null)
-            {
-                var relatedUser = currentUser.RelatedUsers.FirstOrDefault(x => x.ToUser.Username == user.Username);
-                if (relatedUser is not null)
-                {
-                    item.RelationType = relatedUser.RelationType;
-                }
-            }
-
-            items.Add(item);
-        }
-
-        return items;
+        return (mappedUsers, count);
     }
 
     public async Task<(List<UserCardModel> items, int count)> GetUsersPagedSortedFilteredByMultipleRelationTypes(
         List<UserRelationTypes> relationTypes, FindUsersRequest request)
     {
-        var currentUsername = _httpContextAccessor.HttpContext.User.Identity.Name;
+        var currentUser = await _currentUserService.GetCurrentUser();
+
         var (users, count) =
             await _userRepository.GetUsersPagedSortedFilteredByMultipleRelationTypes(
                  request.PageNumber,
                  request.PageSize,
                  relationTypes,
-                 currentUsername,
+                 currentUser?.Username,
                  request.Username,
+                 request.RoleId,
                  request.SortOrder);
 
+        var mappedUsers = _mapper.Map<List<UserCardModel>>(users);
 
-        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
-
-        var items = FillUserAndRelationTypeRecordsList(users, currentUser);
-
-
-        var mappedItems = _mapper.Map<List<UserCardModel>>(items);
-
-        return (mappedItems, count);
+        return (mappedUsers, count);
     }
-
-    // public async Task<List<UserCardModel>> GetUserCards(string username, UserRelationTypes? relationType = null)
-    // {
-    //     var currentUser = await _userRepository.GetByEmailOrUsername(username);
-    //     if (currentUser is null)
-    //     {
-    //         return [];
-    //     }
-    //
-    //     var query = currentUser.RelatedUsers.AsQueryable();
-    //     if (relationType is not null)
-    //     {
-    //         query = query.Where(x => x.RelationType == relationType);
-    //     }
-    //
-    //     var items = query
-    //                 .Select(x => new UserAndRelationTypeRecord(x.ToUser, x.RelationType))
-    //                 .ToList();
-    //
-    //     var mappedItems = _mapper.Map<List<UserCardModel>>(items);
-    //
-    //     return mappedItems;
-    // }
-
 
     public async Task<string> GetProfilePictureUrl(string username)
     {
@@ -408,6 +351,16 @@ public class UserService : IUserService
         if (string.IsNullOrEmpty(url))
         {
             url = $"https://ui-avatars.com/api/?name={user.Username}&size=200p";
+        }
+
+        return url;
+    }
+    public async Task<string> GetProfilePictureUrlByFilename(string username, string? filename)
+    {
+        var url = await _s3Service.GetUrl(_bucketId, filename);
+        if (string.IsNullOrEmpty(url))
+        {
+            url = $"https://ui-avatars.com/api/?name={username}&size=200p";
         }
 
         return url;
@@ -828,8 +781,7 @@ public class UserService : IUserService
     public async Task<UserServiceStatusCodes> BanUser(string username)
     {
         var user = await _userRepository.GetByEmailOrUsername(username);
-        var currentUsername = _httpContextAccessor.HttpContext?.User.Identity?.Name;
-        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+        var currentUser = await _currentUserService.GetCurrentUser();
 
         if (currentUser is null)
         {
@@ -864,8 +816,7 @@ public class UserService : IUserService
     public async Task<UserServiceStatusCodes> UnbanUser(string username)
     {
         var user = await _userRepository.GetByEmailOrUsername(username);
-        var currentUsername = _httpContextAccessor.HttpContext?.User.Identity?.Name;
-        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+        var currentUser = await _currentUserService.GetCurrentUser();
 
         if (currentUser is null)
         {
@@ -895,8 +846,7 @@ public class UserService : IUserService
     public async Task<UserServiceStatusCodes> PromoteUser(string username)
     {
         var user = await _userRepository.GetByEmailOrUsername(username);
-        var currentUsername = _httpContextAccessor.HttpContext?.User.Identity?.Name;
-        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+        var currentUser = await _currentUserService.GetCurrentUser();
         var adminRole = await _roleService.GetByName("Admin");
 
 
@@ -916,7 +866,7 @@ public class UserService : IUserService
         {
             return UserServiceStatusCodes.NotValid;
         }
-        
+
         user.RoleId = adminRole.Id;
 
         await _userRepository.Update(user);
@@ -927,8 +877,7 @@ public class UserService : IUserService
     public async Task<UserServiceStatusCodes> DemoteUser(string username)
     {
         var user = await _userRepository.GetByEmailOrUsername(username);
-        var currentUsername = _httpContextAccessor.HttpContext?.User.Identity?.Name;
-        var currentUser = await _userRepository.GetByEmailOrUsername(currentUsername);
+        var currentUser = await _currentUserService.GetCurrentUser();
         var userRole = await _roleService.GetByName("User");
 
         if (currentUser is null)
@@ -947,7 +896,7 @@ public class UserService : IUserService
         {
             return UserServiceStatusCodes.NotValid;
         }
-        
+
         user.RoleId = userRole.Id;
 
         await _userRepository.Update(user);
@@ -985,6 +934,7 @@ public class UserService : IUserService
         var claims = new List<Claim>
                      {
                          new(ClaimTypes.Name, user.Username),
+                         new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                          new(ClaimTypes.Role, user.Role.Name),
                          new(ClaimTypes.Email, user.Email),
                          new("CreatedAt", user.CreatedAt.ToShortDateString()),

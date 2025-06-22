@@ -65,6 +65,10 @@
                     <div class="alert alert-primary" role="alert">
                         В друзьях
                     </div>
+                    <button asp-controller="WebChat" asp-action="PrivateChat" asp-route-userId="@Model.UserId"
+                            class="btn btn-primary w-100 mb-2">
+                        Написать
+                    </button>
                     <button asp-controller="Account" asp-action="DeleteFriend" class="btn btn-secondary w-100 mb-2">
                         Удалить из друзей
                     </button>
@@ -100,26 +104,26 @@
                     <input asp-for="Username" name="username" hidden/>
                     @if (Model.UserStatus is UserStatuses.Banned)
                     {
-                        <button asp-controller="Account" asp-action="UnbanUser" class="btn btn-danger w-100 mb-2">
+                        <button asp-controller="Account" asp-action="UnbanUser" class="btn btn-primary w-100 mb-2">
                             Разблокировать пользователя
                         </button>
                     }
                     else
                     {
-                        <button asp-controller="Account" asp-action="BanUser" class="btn btn-danger w-100 mb-2">
+                        <button asp-controller="Account" asp-action="BanUser" class="btn btn-primary w-100 mb-2">
                             Заблокировать пользователя
                         </button>
                     }
 
                     @if (Model.RoleName == "Администратор")
                     {
-                        <button asp-controller="Account" asp-action="DemoteUser" class="btn btn-warning w-100 mb-2">
+                        <button asp-controller="Account" asp-action="DemoteUser" class="btn btn-secondary w-100 mb-2">
                             Понизить до пользователя
                         </button>
                     }
                     else if (Model.RoleName == "Пользователь")
                     {
-                        <button asp-controller="Account" asp-action="PromoteUser" class="btn btn-warning w-100 mb-2">
+                        <button asp-controller="Account" asp-action="PromoteUser" class="btn btn-secondary w-100 mb-2">
                             Повысить до администратора
                         </button>
                     }

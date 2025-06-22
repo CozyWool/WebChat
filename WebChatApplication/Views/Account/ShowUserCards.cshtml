@@ -1,10 +1,12 @@
 @model WebChatApplication.Models.User.FilterSortPaging.FindUsersViewModel
 
 <div>
-    @foreach (var user in Model.Users)
-    {
-        <partial name="UserCard" model="user"></partial>
-    }
+    <div style="overflow-y: auto; max-height: 700px">
+        @foreach (var user in Model.Users)
+        {
+            <partial name="UserCard" model="user"></partial>
+        }
+    </div>
     @if (Model.PageViewModel.HasPreviousPage)
     {
         <a
@@ -22,14 +24,14 @@
 
     @if (Model.PageViewModel.HasNextPage)
     {
-        <a 
-           asp-route-page="@(Model.PageViewModel.PageNumber + 1)"
-           asp-route-pageSize="@(Model.PageViewModel.PageSize)"
-           asp-route-username="@(Model.FilterViewModel.SelectedUsername)"
-           asp-route-relationType="@(Model.FilterViewModel.SelectedRelationType)"
-           asp-route-role="@(Model.FilterViewModel.SelectedRole)"
-           asp-route-sortOrder="@(Model.SortViewModel.Current)"
-           class="btn btn-outline-dark">
+        <a
+            asp-route-page="@(Model.PageViewModel.PageNumber + 1)"
+            asp-route-pageSize="@(Model.PageViewModel.PageSize)"
+            asp-route-username="@(Model.FilterViewModel.SelectedUsername)"
+            asp-route-relationType="@(Model.FilterViewModel.SelectedRelationType)"
+            asp-route-role="@(Model.FilterViewModel.SelectedRole)"
+            asp-route-sortOrder="@(Model.SortViewModel.Current)"
+            class="btn btn-outline-dark">
             <b>@Html.DisplayNameFor(m => m.PageViewModel.HasNextPage)</b>
             <i class="glyphicon glyphicon-chevron-right"></i>
         </a>

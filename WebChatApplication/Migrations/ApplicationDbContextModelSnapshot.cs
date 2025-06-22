@@ -87,7 +87,7 @@ namespace WebChatApplication.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.Property<Guid>("OwnerId")
+                    b.Property<Guid?>("OwnerId")
                         .HasColumnType("uuid")
                         .HasColumnName("owner_id");
 
@@ -346,7 +346,6 @@ namespace WebChatApplication.Migrations
                     b.HasOne("WebChatApplication.DataAccess.Entities.UserEntity", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId")
-                        .IsRequired()
                         .HasConstraintName("owner_id_fk");
 
                     b.Navigation("Owner");

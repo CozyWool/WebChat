@@ -21,7 +21,7 @@ public class UserConfiguration : IEntityTypeConfiguration<UserEntity>
                .ValueGeneratedNever()
                .HasColumnName("role_id");
         builder.Property(e => e.Username)
-               .HasMaxLength(75)
+               .HasMaxLength(30)
                .HasColumnName("username");
         builder.Property(e => e.CreatedAt)
                .HasColumnName("created_at");

@@ -10,19 +10,27 @@ public class UserProfile : Profile
 {
     public UserProfile()
     {
-        CreateMap<UserCardModel, UserEntity>();
-        CreateMap<UserAndRelationTypeRecord, UserCardModel>().AfterMap<UserCardModelMappingAction>();
+        CreateMap<UserEntity, UserCardModel>().AfterMap<UserEntityToUserCardModelMappingAction>();
     }
-
-    private class UserCardModelMappingAction(IUserService userService)
-        : IMappingAction<UserAndRelationTypeRecord, UserCardModel>
+    private class UserEntityToUserCardModelMappingAction(IUserService userService, ICurrentUserService currentUserService)
+        : IMappingAction<UserEntity, UserCardModel>
     {
-        public void Process(UserAndRelationTypeRecord source, UserCardModel destination, ResolutionContext context)
+        public void Process(UserEntity source, UserCardModel destination, ResolutionContext context)
         {
-            destination.ProfilePictureUrl = userService.GetProfilePictureUrl(source.ToUser.Username).Result;
-            destination.Username = source.ToUser.Username;
-            destination.LastActivityAt = source.ToUser.LastActivityAt;
-            destination.IsOnline = userService.IsOnline(source.ToUser.LastActivityAt);
+            destination.ProfilePictureUrl = userService.GetProfilePictureUrl(source.Username).Result;
+            destination.UserId = source.Id;
+            destination.Username = source.Username;
+            destination.LastActivityAt = source.LastActivityAt;
+            destination.IsOnline = userService.IsOnline(source.LastActivityAt);
+            destination.RelationType = UserRelationTypes.NotRelated;
+         
+            var currentUser =  currentUserService.GetCurrentUser().Result;
+            var relatedUser = currentUser?.RelatedUsers
+                                         .FirstOrDefault(x => x.ToUser.Username == source.Username);
+            if (relatedUser is not null)
+            {
+                destination.RelationType = relatedUser.RelationType;
+            }
         }
     }
 }

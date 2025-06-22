@@ -10,6 +10,7 @@ public class RegisterModel
     public string Email { get; set; }
 
     [Required(ErrorMessage = "Укажите имя пользователя")]
+    // TODO: наложить ограничения 
     [Display(Name = "Имя пользователя")]
     public string Username { get; set; }
 

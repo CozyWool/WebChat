@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WebChatApplication.DataAccess.Contexts;
+using Newtonsoft.Json;
+using WebChatApplication.Models;
+using WebChatApplication.Services;
 
 namespace WebChatApplication.Controllers;
 
@@ -8,20 +10,69 @@ namespace WebChatApplication.Controllers;
 [Authorize]
 public class WebChatController : Controller
 {
-    private ApplicationDbContext _applicationDbContext;
+    private readonly IChatService _chatService;
+    private readonly IMessageService _messageService;
 
-    public WebChatController(ApplicationDbContext applicationDbContext)
+    public WebChatController(IChatService chatService, IMessageService messageService)
     {
-        _applicationDbContext = applicationDbContext;
+        _chatService = chatService;
+        _messageService = messageService;
     }
 
     [AllowAnonymous]
     [Route("/")]
     [HttpGet("index")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(Guid? chatId)
     {
         ViewData["Title"] = "Веб-чат";
+        if (!User.Identity.IsAuthenticated)
+        {
+            return View(new WebChatViewModel());
+        }
 
-        return View();
+        var model = await _chatService.GetChatsByUsername(User.Identity.Name, chatId);
+        return View(model);
+    }
+
+    [HttpPost("private-chat/{userId:guid}")]
+    public async Task<IActionResult> PrivateChat(Guid userId)
+    {
+        ViewData["Title"] = "Чаты";
+
+        var model = await _chatService.GetPrivateChatByUserId(userId);
+        if (model is null)
+        {
+            return View("_ShowStatusMessageWithButtons",
+                        new StatusMessageModel("Произошла ошибка при открытии чата", true));
+        }
+
+        return RedirectToAction("Index", "WebChat", new {chatId = model.Id});
+    }
+
+    [HttpPost("load-more-messages")]
+    public async Task<IActionResult> LoadMoreMessages(Guid chatId, int messageCount, int alreadyLoadedMessageCount)
+    {
+        var result = await _chatService.GetChatById(chatId, messageCount, alreadyLoadedMessageCount);
+        var jsonSerializerSettings = new JsonSerializerSettings
+                                     {
+                                         DateFormatString = "dd.MM.yyyy HH:mm:ss",
+                                         DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+                                     };
+        return new ContentResult
+               {
+                   Content = JsonConvert.SerializeObject(result, jsonSerializerSettings),
+                   ContentType = "application/json"
+               };
+    }
+
+    [HttpDelete("delete-message/{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        if (await _messageService.Delete(id))
+        {
+            return Ok();
+        }
+
+        return BadRequest();
     }
 }

@@ -361,5 +361,20 @@ BEGIN
     VALUES ('20250420230047_PreviousStatusColumn', '9.0.2');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250510074616_ChatOwnerNullable') THEN
+    ALTER TABLE chats ALTER COLUMN owner_id DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250510074616_ChatOwnerNullable') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250510074616_ChatOwnerNullable', '9.0.2');
+    END IF;
+END $EF$;
 COMMIT;
 

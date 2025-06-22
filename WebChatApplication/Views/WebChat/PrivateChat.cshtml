@@ -1,0 +1,145 @@
+@model WebChatApplication.Models.PrivateChatModel
+
+<div class="message-wrap">
+    <div class="receiver-info">
+        <div>
+            <a href="@Url.Action(
+                                 "ProfileInfo",
+                                 "Account",
+                                 new {username = Model.PrivateUser.Username},
+                                 Context.Request.Scheme)">
+                <img src="@Model.PrivateUser.ProfilePictureUrl" class="chat-profile-img" alt=""></a>
+        </div>
+        <h4 class="ms-4 mt-auto mb-auto text-truncate">@Model.PrivateUser.Username</h4>
+        <div class="ms-auto">
+            @if (Model.PrivateUser.IsOnline)
+            {
+                <span class="mb-0"><i class="online-status"></i> Онлайн</span>
+            }
+            else if (Model.PrivateUser.LastActivityAt is not null)
+            {
+                <span class="mb-0">
+                    <i class="offline-status"></i> Был(а) в сети:
+                    <date-humanizer utc-date-time="@Model.PrivateUser.LastActivityAt"/>
+                </span>
+            }
+            else
+            {
+                <span class="mb-0"><i class="never-online-status"></i> Не был(а) в сети</span>
+            }
+        </div>
+    </div>
+
+    <div class="messages-box">
+        @if (Model.Messages.Count > 0)
+        {
+            <form id="load-more-messages-form" class="text-center">
+                <input type="hidden" name="messageCount" id="message-count" value="50"/>
+                <input type="hidden" name="alreadyLoadedMessageCount" id="already-loaded-message-count"
+                       value="@Model.Messages.Count"/>
+                <input type="hidden" name="chatId" value="@Model.Id"/>
+                <button class="load-more-messages btn btn-dark text-center">Загрузить больше сообщений</button>
+                <span class="no-more-messages">Сообщений больше нет</span>
+            </form>
+        }
+        @foreach (var message in Model.Messages)
+        {
+            <div class="message @(message.IsCurrentUserSentMessage ? "sent-message" : "received-message")"
+                 id="@message.Id">
+                <div class="profile-img-container">
+                    <a href="@Url.Action(
+                                         "ProfileInfo",
+                                         "Account",
+                                         new {username = message.Author.Username},
+                                         Context.Request.Scheme)">
+                        <img src="@message.Author.ProfilePictureUrl" class="chat-profile-img" alt="..."></a>
+                </div>
+                <div class="message-container">
+                    <div>
+                        <a href="@Url.Action(
+                                             "ProfileInfo",
+                                             "Account",
+                                             new {username = message.Author.Username},
+                                             Context.Request.Scheme)"
+                           class="text-truncate message-username">@message.Author.Username</a>
+                        <span class="reply-span" data-message-id="@message.Id">Ответить</span>
+                    </div>
+                    @if (message.ParentMessage is not null)
+                    {
+                        <div class="reply quote-like quote-like-hoverable quote-like-border"
+                             data-parent-message-id="@message.ParentMessage.Id">
+                            <div class="c-ripple"></div>
+                            <div class="reply-content">
+                                <div class="reply-title">
+                                    <span>@message.ParentMessage.Author.Username</span>
+                                </div>
+                                <div class="reply-subtitle">@message.ParentMessage.Content</div>
+                            </div>
+                        </div>
+                    }
+                    <div>
+                        <span class="message-content">@message.Content</span>
+                        <span class="date-utc-span sent-at-span"
+                              data-sent-at="@message.SentAt.ToString()">
+                            @message.SentAt.ToString()
+                        </span>
+                        <span class="updated-span"
+                              data-updated-at="@message.UpdatedAt.ToString()">
+                            @(message.UpdatedAt is null ? "" : "изменено")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="send-message-box">
+        <div class="reply quote-like quote-like-hoverable quote-like-border mb-2" id="send-message-reply-container">
+            <div class="c-ripple"></div>
+            <div class="reply-content" style="display: flex">
+                <div style="width: 95%;">
+                    <div class="reply-title">
+                        <span id="send-message-reply-title">В ответ </span>
+                    </div>
+                    <div class="reply-subtitle">
+                        <span id="send-message-reply-subtitle">Контент тут</span>
+                    </div>
+                </div>
+                <i id="send-message-close-reply-button" style="z-index: 2"
+                   class="fa-solid fa-xmark float-end ms-auto me-3 mt-auto mb-auto"></i>
+            </div>
+        </div>
+
+        <div class="reply quote-like quote-like-hoverable quote-like-border mb-2" id="send-message-edit-container">
+            <div class="c-ripple"></div>
+            <div class="reply-content" style="display: flex">
+                <div style="width: 95%;">
+                    <div class="reply-title">
+                        <span id="send-message-edit-title">В ответ </span>
+                    </div>
+                    <div class="reply-subtitle">
+                        <span id="send-message-edit-subtitle">Контент тут</span>
+                    </div>
+                </div>
+                <i id="send-message-close-edit-button" style="z-index: 2"
+                   class="fa-solid fa-xmark float-end ms-auto me-3 mt-auto mb-auto"></i>
+            </div>
+        </div>
+
+        <div id="send-message-input-container">
+            <textarea rows="4" class="message-field" placeholder="Сообщение..." id="send-message-field"></textarea>
+            <button id="send-button" class="send-btn btn btn-dark">Отправить</button>
+        </div>
+        <div id="edit-message-input-container">
+            <textarea rows="4" class="message-field" placeholder="Сообщение..." id="edit-message-field"></textarea>
+            <button id="edit-button" class="send-btn btn btn-dark">Изменить</button>
+        </div>
+    </div>
+</div>
+
+<partial name="_ContextMenu"></partial>
+
+@section Scripts{
+    <partial name="_PrivateChatScripts" for="@Model"></partial>
+}
+

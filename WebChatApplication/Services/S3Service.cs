@@ -1,6 +1,5 @@
 ﻿using Minio;
 using Minio.DataModel.Args;
-using Minio.Exceptions;
 
 namespace WebChatApplication.Services;
 
@@ -30,6 +29,7 @@ public class S3Service : IS3Service
     {
         try
         {
+            // TODO: добавить разделение по папкам (название папки - user_id)
             var objectName = $"{Guid.NewGuid()}_{fileName}";
             const string contentType = "application/octet-stream";
 

@@ -1,0 +1,46 @@
+﻿.c-ripple {
+    position: absolute;
+    inset: 0;
+}
+
+.reply-content {
+    padding: 3px 0;
+    padding-inline-end: .375rem;
+    margin-inline-start: .5rem;
+    display: block
+}
+
+.reply-title {
+    color: rgb(92, 168, 83);
+}
+
+.reply-subtitle {
+    font-size: 14px;
+    position: relative;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.quote-like {
+    background-color: rgba(64, 169, 32, .1);
+    overflow: hidden;
+    border-radius: .25rem;
+    position: relative
+}
+
+.quote-like-hoverable {
+    cursor: pointer;
+}
+
+.quote-like-border:before {
+    content: " ";
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    flex: 0 0 auto;
+    width: .1875rem;
+    background: rgb(92, 168, 83);
+    z-index: 1;
+}

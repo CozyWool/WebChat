@@ -7,9 +7,10 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>@ViewBag.Title</title>
     <link href="~/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet"
-          type="text/css"/>
-    <link href="~/css/app_style.css" rel="stylesheet" type="text/css">
+    <link href="~/css/fontawesome-all.min.css" rel="stylesheet" type="text/css"/>
+    <link href="~/css/app-style.css" rel="stylesheet" type="text/css">
+    <link href="~/css/chat-style.css" rel="stylesheet"/>
+    <link href="~/css/context-menu.css" rel="stylesheet"/>
     <link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico">
     <link type="image/png" sizes="96x96" rel="icon" href="/images/favicon-96x96.png">
 </head>
@@ -93,12 +94,24 @@
         </div>
     </nav>
 </header>
-<div class="container">
+
+<div>
     <main role="main" class="pb-3">
-        @RenderBody()
+        <div class="bg-grid"></div>
+        <div
+            style="background: #ffffff; 
+            border-radius: 20px;
+            padding: 50px;
+            width: 80vw;
+            margin: 0 auto;">
+            @RenderBody()
+        </div>
     </main>
 </div>
+
+<script src="~/js/jquery.min.js"></script>
 <script src="~/js/bootstrap.min.js"></script>
 <script src="~/js/dateHumanizer.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
