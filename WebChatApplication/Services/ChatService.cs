@@ -82,12 +82,6 @@ public class ChatService : IChatService
             }
         }
 
-        chatEntity.Messages = chatEntity
-                              .Messages
-                              .OrderBy(x => x.SentAt)
-                              .TakeLast(50)
-                              .ToList();
-
         var chatModel = _mapper.Map<ChatModel>(chatEntity);
         var privateChatModel = _mapper.Map<PrivateChatModel>(chatModel);
         return privateChatModel;
