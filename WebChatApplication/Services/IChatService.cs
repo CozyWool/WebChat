@@ -7,7 +7,8 @@ public interface IChatService
 {
     Task<ChatModel?> GetChatById(Guid chatId, int messageCount, int alreadyLoadedMessageCount);
     Task<PrivateChatModel?> GetPrivateChatByUserId(Guid userId);
+    Task<GroupChatModel?> GetGroupChatByUserIds(List<Guid> userIds);
     Task<ChatEntity?> CreatePrivateChat(Guid userId);
-    Task<Guid?> CreateGroupChat(List<Guid> userIds);
+    Task<ChatEntity?> CreateGroupChat(List<Guid> userIds);
     Task<WebChatViewModel> GetChatsByUsername(string? username, Guid? chatId, int messageCount = 50);
 }

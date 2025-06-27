@@ -46,7 +46,6 @@
         overflow-y: auto;
         margin-right: 10px;
         overflow-x: hidden;
-        height: 75vh;
         width: 100%;
         min-width: 20vw;
         max-width: 20vw;
@@ -56,71 +55,107 @@
     .current-chat-container {
         width: 100%;
         min-width: 55vw;
-        max-width: 55vw;
+    }
+
+    .new-chat-user-card:hover {
+        cursor: pointer;
     }
 </style>
 @if (!User.Identity.IsAuthenticated)
 {
     <h3 class="text-center">Добро пожаловать в веб-чат!</h3>
     <h5>Для продолжения войдите в аккаунт или зарегистрируйтесь</h5>
-    <a asp-action="Login" asp-controller="Account" class="btn btn-primary w-100">Войти</a>
-    <a asp-action="Register" asp-controller="Account" class="btn btn-secondary w-100 mt-2">Зарегистрироваться</a>
+    <div class="d-flex flex-row justify-content-between">
+        <a class="btn btn-primary w-100 me-2" asp-area="" asp-controller="Account" asp-action="Login"
+           asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
+            Войти
+        </a>
+        <a class="btn btn-secondary w-100" asp-area="" asp-controller="Account" asp-action="Register"
+           asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
+            Зарегистрироваться
+        </a>
+    </div>
 }
 else
 {
-    <div class="d-flex flex-row">
-        <div class="side-menu-container">
-            <h5 class="text-center text-truncate">С возвращением,<br/> @User.Identity.Name!</h5>
-            <div class="d-flex flex-column">
-                @foreach (var chatModel in Model.Chats)
-                {
-                    if (chatModel is PrivateChatModel privateChatModel)
+    if (Model.CurrentChat is not null)
+    {
+        <div id="hide-side-menu-button" class="mb-2" style="cursor:pointer;"><i class="fs-4 fa-solid fa-bars"></i></div>
+    }
+
+    <div class="d-flex flex-row" style="min-height: 75vh">
+        <div id="side-menu" class="flex-column justify-content-between" style="display: flex">
+            <div class="side-menu-container">
+                <h5 class="text-center text-truncate">С возвращением,<br/> @User.Identity.Name!</h5>
+                <div class="d-flex flex-column">
+                    @foreach (var chatModel in Model.Chats)
                     {
-                        <div
-                            class="@(Model.CurrentChat?.Id == privateChatModel.Id ? "side-menu-chat-info-selected" : "side-menu-chat-info")"
-                            onclick="location.href = '/web-chat/index?chatId=@chatModel.Id'">
-                            <div>
-                                <img src="@privateChatModel.PrivateUser.ProfilePictureUrl" class="chat-profile-img"
-                                     alt="...">
-                            </div>
-                            <div class="ms-3 d-flex flex-column">
-                                <div class="d-flex flex-row">
-                                    <span class="text-truncate fw-bold"
-                                          style="width: 15vw">@privateChatModel.PrivateUser.Username</span>
-                                    <div class="float-end">
-                                        @if (privateChatModel.PrivateUser.IsOnline)
-                                        {
-                                            <span class="mb-0"><i class="online-status"></i></span>
-                                        }
-                                        else if (privateChatModel.PrivateUser.LastActivityAt is not null)
-                                        {
-                                            <span class="mb-0"><i class="offline-status"></i></span>
-                                        }
-                                        else
-                                        {
-                                            <span class="mb-0"><i class="never-online-status"></i></span>
-                                        }
+                        if (chatModel is PrivateChatModel privateChatModel)
+                        {
+                            <div
+                                class="@(Model.CurrentChat?.Id == privateChatModel.Id ? "side-menu-chat-info-selected" : "side-menu-chat-info")"
+                                onclick="location.href = '/web-chat/index?chatId=@chatModel.Id'">
+                                <div>
+                                    <img src="@privateChatModel.PrivateUser.ProfilePictureUrl" class="chat-profile-img"
+                                         alt="...">
+                                </div>
+                                <div class="ms-3 d-flex flex-column">
+                                    <div class="d-flex flex-row">
+                                        <span class="text-truncate fw-bold"
+                                              style="width: 15vw">@privateChatModel.PrivateUser.Username</span>
+                                        <div class="float-end">
+                                            @if (privateChatModel.PrivateUser.IsOnline)
+                                            {
+                                                <span class="mb-0"><i class="online-status"></i></span>
+                                            }
+                                            else if (privateChatModel.PrivateUser.LastActivityAt is not null)
+                                            {
+                                                <span class="mb-0"><i class="offline-status"></i></span>
+                                            }
+                                            else
+                                            {
+                                                <span class="mb-0"><i class="never-online-status"></i></span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-row">
+                                        <span class="mt-auto text-truncate side-menu-last-message">
+                                            @(privateChatModel.Messages.LastOrDefault()?.Content ?? "Нет сообщений")
+                                        </span>
+                                        <span class="date-utc-span side-menu-last-message-sent-at">
+                                            @(privateChatModel.Messages.LastOrDefault()?.SentAt.ToString() ?? "")
+                                        </span>
                                     </div>
                                 </div>
-                                <div class="d-flex flex-row">
-                                    <span class="mt-auto text-truncate side-menu-last-message">
-                                        @(privateChatModel.Messages.LastOrDefault()?.Content ?? "Нет сообщений")
-                                    </span>
-                                    <span class="date-utc-span side-menu-last-message-sent-at">
-                                        @(privateChatModel.Messages.LastOrDefault()?.SentAt.ToString() ?? "")
-                                    </span>
-                                </div>
                             </div>
-
-                        </div>
+                        }
+                        else
+                        {
+                            <a asp-controller="WebChat" asp-action="Index" asp-route-chatId="@chatModel.Id">
+                                @chatModel.Name - @chatModel.ChatType - @chatModel.Id
+                            </a>
+                        }
                     }
-                    else
-                    {
-                        <a asp-controller="WebChat" asp-action="Index" asp-route-chatId="@chatModel.Id">
-                            @chatModel.Name - @chatModel.ChatType - @chatModel.Id
-                        </a>
-                    }
-                }
+                </div>
+            </div>
+            <div class="dropdown open">
+                <div
+                    style="cursor:pointer;"
+                    id="triggerId"
+                    data-bs-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false">
+                    <i class="fs-5 fa-solid fa-plus"></i>
+                </div>
+                <div class="dropdown-menu" aria-labelledby="triggerId">
+                    <button class="dropdown-item p-3" id="create-private-chat-button" data-bs-toggle="modal"
+                            data-bs-target="#newPrivateChatModal">
+                        <i class="fa-solid fa-user me-2" style="width: 20px"></i> Создать приватный чат
+                    </button>
+                    <button class="dropdown-item p-3" id="create-group-chat-button">
+                        <i class="fa-solid fa-user-group me-2" style="width: 20px"></i> Создать групповой чат
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -135,6 +170,31 @@ else
             }
         </div>
     </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="newPrivateChatModal" tabindex="-1" aria-labelledby="newPrivateChatModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="newPrivateChatModalLabel">Создать приватный чат</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul>
+                        @foreach (var friend in Model.Friends)
+                        {
+                            <partial name="NewChatUserCard" for="@friend"/>
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary">Далее</button>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @section Scripts
@@ -143,4 +203,40 @@ else
     {
         <partial name="_PrivateChatScripts" for="CurrentChat"></partial>
     }
+    <script>
+        let hideSideMenuButton = $("#hide-side-menu-button");
+        let sideMenu = $("#side-menu");
+        let isSideMenuHidden = false;
+        hideSideMenuButton.click(function () {
+            if (isSideMenuHidden) {
+                sideMenu.show();
+            } else {
+                sideMenu.hide();
+            }
+            isSideMenuHidden = !isSideMenuHidden;
+        })
+    </script>
+
+    <script>
+        document.querySelectorAll('.new-chat-user-card').forEach(el => {
+            el = $(el)
+            el.click(async function () {
+                let userId = el.attr("data-user-id");
+                try {
+                    const response = await fetch(`/web-chat/private-chat/${userId}`, {
+                        method: 'POST',
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    console.log("Success:", response);
+                    window.location.href = response.url;
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+
+    </script>
 }

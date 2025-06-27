@@ -20,8 +20,8 @@
     let sendMessageEditSubtitle = document.querySelector("#send-message-edit-subtitle");
     sendMessageEditContainer.style.display = "none";
 
-    let intiHeight = contextMenu.offsetHeight;
-    let initWidth = contextMenu.offsetWidth;
+    let contextMenuInitHeight = contextMenu.offsetHeight;
+    let contextMenuInitWidth = contextMenu.offsetWidth;
     contextMenu.style.display = "none";
     document.querySelectorAll('.message').forEach(element => {
         element.addEventListener("contextmenu", contextMenuEventHandler);
@@ -114,8 +114,8 @@
         let wHeight = window.innerHeight;
         let wWidth = window.innerWidth;
 
-        let menuHeight = contextMenu.offsetHeight || intiHeight;
-        let menuWidth = contextMenu.offsetWidth || initWidth;
+        let menuHeight = contextMenu.offsetHeight || contextMenuInitHeight;
+        let menuWidth = contextMenu.offsetWidth || contextMenuInitWidth;
 
         let availableHeight = wHeight - positionY;
         let availableWidth = wWidth - positionX;

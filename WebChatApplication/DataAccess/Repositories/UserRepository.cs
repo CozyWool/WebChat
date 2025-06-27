@@ -40,6 +40,13 @@ public class UserRepository : IUserRepository
                    .FirstOrDefaultAsync(x => x.Id == id);
     }
 
+    public async Task<List<UserEntity>> GetByIds(List<Guid> userIds)
+    {
+        return await GetUsersQueryable()
+                   .Where(x => userIds.Contains(x.Id))
+                   .ToListAsync();
+    }
+
     public async Task<UserEntity?> GetByEmailOrUsername(string emailOrUsername)
     {
         return await GetUsersQueryable()
