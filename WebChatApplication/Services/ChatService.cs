@@ -107,9 +107,33 @@ public class ChatService : IChatService
         return chat;
     }
 
-    public async Task<Guid?> CreateGroupChat(List<Guid> userIds)
+    public async Task<GroupChatModel?> GetGroupChatByUserIds(List<Guid> userIds)
     {
         throw new NotImplementedException();
+    }
+    
+    public async Task<ChatEntity?> CreateGroupChat(List<Guid> userIds)
+    {
+        var currentUser = await _currentUserService.GetCurrentUser();
+        if (currentUser is null || !userIds.Contains(currentUser.Id))
+        {
+            return null;
+        }
+        var users = await _userRepository.GetByIds(userIds);
+        if (users.Count != userIds.Count)
+        {
+            return null;
+        }
+
+        var chatEntity = new ChatEntity
+                         {
+                             Name = "Новый групповой чат",
+                             ChatType = ChatTypes.Group,
+                             CreatedAt = DateTime.UtcNow,
+                             Users = users,
+                         };
+        var chat = await _chatRepository.Create(chatEntity);
+        return chat;
     }
 
     public async Task<WebChatViewModel> GetChatsByUsername(string? username, Guid? chatId, int messageCount = 50)
@@ -153,7 +177,8 @@ public class ChatService : IChatService
         var model = new WebChatViewModel
                     {
                         CurrentChat = chatId is null ? null : mappedChats.FirstOrDefault(x => x.Id == chatId),
-                        Chats = mappedChats
+                        Chats = mappedChats,
+                        Friends = await _currentUserService.GetFriends(),
                     };
         return model;
     }

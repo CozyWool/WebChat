@@ -1,0 +1,38 @@
+﻿@model WebChatApplication.Models.User.UserCardModel
+
+<div class="new-chat-user-card" data-user-id="@Model.UserId">
+    <div class="user-card" style="margin: 20px 5px">
+        <div class="card_load">
+            <img src="@Model.ProfilePictureUrl"
+                 class="chat-profile-img"
+                 alt="">
+        </div>
+        <div class="user-card-content">
+            <div class="card_load_extreme_title">
+                <span>@Model.Username</span>
+            </div>
+            <div class="card_load_extreme_description">
+                <span class="card-text">
+                    <small class="text-body-secondary">
+                        @if (Model.IsOnline)
+                        {
+                            <span class="mb-0"><i class="online-status"></i> Онлайн</span>
+                        }
+                        else if (Model.LastActivityAt is not null)
+                        {
+                            <span class="mb-0">
+                                <i class="offline-status"></i> Был(а) в сети:
+                                <date-humanizer utc-date-time="@Model.LastActivityAt"/>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="mb-0"><i class="never-online-status"></i> Не был(а) в сети</span>
+                        }
+                    
+                    </small>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

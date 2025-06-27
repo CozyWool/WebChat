@@ -15,103 +15,129 @@
     <link type="image/png" sizes="96x96" rel="icon" href="/images/favicon-96x96.png">
 </head>
 <body>
-<header>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+
+<div>
+    <main role="main">
+        <div class="bg-grid"></div>
         <div class="container-fluid">
-
-            <a class="navbar-brand" asp-area="" asp-controller="WebChat" asp-action="Index" style="max-height: 50px">
-                <img class="me-1" src="/images/web-app-manifest-512x512.png" alt="" style="max-height: 40px"/>Веб-чат
-            </a>
-
-            <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" aa="" asp-controller="WebChat" asp-action="Index">Главная</a>
-                        </li>
-                        @if (User.Identity is {IsAuthenticated: true})
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account"
-                                   asp-action="ProfileInfo"
-                                   asp-route-username="@User.Identity.Name">
-                                    Мой профиль
+            <div class="row flex-nowrap">
+                <div class="bg-white col-auto col-md-4 col-lg-2 min-vh-100 d-flex flex-column justify-content-between w-auto">
+                    <div class="bg-white p-2">
+                        <div class="text-center" style="cursor: pointer" id="hide-side-bar-button"><i class="fs-4 fa-solid fa-bars"></i></div>
+                        <a class="d-flex flex-row justify-content-center text-decoration-none mt-1 text-dark" asp-area=""
+                           asp-controller="WebChat" asp-action="Index">
+                            <img class="me-1" src="/images/web-app-manifest-512x512.png" alt=""
+                                 style="max-height: 40px"/>
+                            <span class="fs-4 d-none d-sm-inline toggleable-display">Веб-чат</span>
+                        </a>
+                        <ul class="nav nav-pills flex-column mt-4">
+                            <li class="nav-item py-2 py-sm-0">
+                                <a class="nav-link text-dark text-center" asp-controller="WebChat" asp-action="Index">
+                                    <i class="fs-5 fa-solid fa-house" style="width:25px"></i>
+                                    <span class="fs-4 d-none d-sm-inline ms-2 toggleable-display">Главная</span>
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account"
-                                   asp-action="FriendList">
-                                    Друзья
-                                </a>
-                            </li>
-                            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                            @if (User.Identity is {IsAuthenticated: true})
                             {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Account"
-                                       asp-action="AdminMenu">
-                                        Меню администратора
+                                <li class="nav-item py-2 py-sm-0">
+                                    <a class="nav-link text-dark text-center" asp-area="" asp-controller="Account"
+                                       asp-action="ProfileInfo"
+                                       asp-route-username="@User.Identity.Name">
+                                        <i class="fs-5 fa-solid fa-circle-user" style="width:25px"></i>
+                                        <span class="fs-4 d-none d-sm-inline ms-2 toggleable-display">Мой профиль</span>
                                     </a>
                                 </li>
+                                <li class="nav-item py-2 py-sm-0">
+                                    <a class="nav-link text-dark text-center" asp-area="" asp-controller="Account"
+                                       asp-action="FriendList">
+                                        <i class="fs-5 fa-solid fa-users" style="width:25px"></i>
+                                        <span class="fs-4 d-none d-sm-inline ms-2 toggleable-display">Друзья</span>
+                                    </a>
+                                </li>
+                                @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                                {
+                                    <li class="nav-item py-2 py-sm-0">
+                                        <a class="nav-link text-dark text-center" asp-area="" asp-controller="Account"
+                                           asp-action="AdminMenu">
+                                            <i class="fs-5 fa-solid fa-user-secret" style="width:25px"></i>
+                                            <span class="fs-4 d-none d-sm-inline ms-2 toggleable-display">Меню администратора</span>
+                                        </a>
+                                    </li>
+                                }
                             }
-                        }
-                    </ul>
-                    @if (User.Identity is {IsAuthenticated: true})
-                    {
-                        <ul class="navbar-nav float-left">
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account"
-                                   asp-action="ProfileInfo" asp-route-username="@User.Identity.Name">
-                                    Здравствуйте, @User.Identity.Name!
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account"
-                                   asp-action="Logout">
-                                    Выйти
-                                </a>
-                            </li>
                         </ul>
-                    }
-                    else
-                    {
-                        <ul class="navbar-nav float-left">
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register"
-                                   asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
-                                    Зарегистрироваться
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login"
+                    </div>
+                    <div class="mb-2">
+                        @if (User.Identity is {IsAuthenticated: true})
+                        {
+                            <div class="dropdown open p-3">
+                                <button class="btn border-none text-dark dropdown-toggle text-center" style="max-width: 200px"
+                                        type="button"
+                                        id="triggerId"
+                                        data-bs-toggle="dropdown"
+                                        aria-haspopup="true"
+                                        aria-expanded="false">
+                                    <i class="fa fa-user"></i>
+                                    <span
+                                        class="ms-2 d-none d-sm-inline toggleable-display text-wrap text-break">Здравствуйте, @User.Identity.Name!</span>
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="triggerId">
+                                    <a class="dropdown-item text-dark"
+                                       asp-controller="Account"
+                                       asp-action="ProfileInfo"
+                                       asp-route-username="@User.Identity.Name">
+                                        Профиль
+                                    </a>
+                                    <a class="dropdown-item text-dark"
+                                       asp-controller="Account"
+                                       asp-action="Logout">
+                                        Выйти из аккаунта
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-row justify-content-between">
+                                <a class="btn btn-primary w-100 me-2" asp-area="" asp-controller="Account"
+                                   asp-action="Login"
                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
                                     Войти
                                 </a>
-                            </li>
-                        </ul>
-                    }
-                </ul>
+                                <a class="btn btn-secondary w-100" asp-area="" asp-controller="Account"
+                                   asp-action="Register"
+                                   asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
+                                    Зарегистрироваться
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div
+                    style="background: #ffffff;
+                    border-radius: 20px;
+                    padding: 50px;
+                    height: 100%;
+                    width: 80vw;
+                    margin: auto;">
+                    @RenderBody()
+                </div>
             </div>
-        </div>
-    </nav>
-</header>
-
-<div>
-    <main role="main" class="pb-3">
-        <div class="bg-grid"></div>
-        <div
-            style="background: #ffffff; 
-            border-radius: 20px;
-            padding: 50px;
-            width: 80vw;
-            margin: 0 auto;">
-            @RenderBody()
         </div>
     </main>
 </div>
 
 <script src="~/js/jquery.min.js"></script>
-<script src="~/js/bootstrap.min.js"></script>
+<script src="~/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/dateHumanizer.js"></script>
+<script>
+    $("#hide-side-bar-button").click(function () {
+        document.querySelectorAll('.toggleable-display').forEach(el => {
+            el = $(el)
+            el.toggleClass("d-sm-inline");
+        })
+    });
+</script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
