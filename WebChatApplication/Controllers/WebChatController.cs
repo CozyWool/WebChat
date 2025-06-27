@@ -48,6 +48,20 @@ public class WebChatController : Controller
 
         return RedirectToAction("Index", "WebChat", new {chatId = model.Id});
     }
+    [HttpPost("group-chat")]
+    public async Task<IActionResult> GroupChat(List<Guid> userIds)
+    {
+        ViewData["Title"] = "Чаты";
+
+        var model = await _chatService.GetGroupChatByUserIds(userIds);
+        if (model is null)
+        {
+            return View("_ShowStatusMessageWithButtons",
+                        new StatusMessageModel("Произошла ошибка при открытии чата", true));
+        }
+
+        return RedirectToAction("Index", "WebChat", new {chatId = model.Id});
+    }
 
     [HttpPost("load-more-messages")]
     public async Task<IActionResult> LoadMoreMessages(Guid chatId, int messageCount, int alreadyLoadedMessageCount)

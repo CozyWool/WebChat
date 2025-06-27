@@ -376,5 +376,27 @@ BEGIN
     VALUES ('20250510074616_ChatOwnerNullable', '9.0.2');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250624051616_ChatPicture') THEN
+    ALTER TABLE users ALTER COLUMN username TYPE character varying(30);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250624051616_ChatPicture') THEN
+    ALTER TABLE chats ADD chat_picture_file_name character varying(300);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250624051616_ChatPicture') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250624051616_ChatPicture', '9.0.2');
+    END IF;
+END $EF$;
 COMMIT;
 

@@ -7,6 +7,7 @@ public interface IUserRepository
 {
     Task<List<UserEntity>> GetAll();
     Task<UserEntity?> GetById(Guid id);
+    Task<List<UserEntity>> GetByIds(List<Guid> userIds);
     Task<UserEntity?> GetByEmailOrUsername(string emailOrUsername);
     Task<UserEntity?> GetByEmailOrUsername(string email, string username);
 

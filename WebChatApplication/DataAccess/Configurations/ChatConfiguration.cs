@@ -23,6 +23,10 @@ public class ChatConfiguration : IEntityTypeConfiguration<ChatEntity>
                .HasColumnName("name");
         builder.Property(e => e.CreatedAt)
                .HasColumnName("created_at");
+        builder.Property(e => e.ChatPictureFileName)
+               .HasMaxLength(300)
+               .ValueGeneratedNever()
+               .HasColumnName("chat_picture_file_name");
 
         builder.HasOne(e => e.Owner)
                .WithMany()
