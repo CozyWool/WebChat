@@ -129,6 +129,31 @@ else
                                 </div>
                             </div>
                         }
+                        else if (chatModel is GroupChatModel groupChatModel)
+                        {
+                            <div
+                                class="@(Model.CurrentChat?.Id == groupChatModel.Id ? "side-menu-chat-info-selected" : "side-menu-chat-info")"
+                                onclick="location.href = '/web-chat/index?chatId=@chatModel.Id'">
+                                <div>
+                                    <img src="@groupChatModel.ChatPictureUrl" class="chat-profile-img"
+                                         alt="...">
+                                </div>
+                                <div class="ms-3 d-flex flex-column">
+                                    <div class="d-flex flex-row">
+                                        <span class="text-truncate fw-bold"
+                                              style="width: 15vw">@groupChatModel.Name</span>
+                                    </div>
+                                    <div class="d-flex flex-row">
+                                        <span class="mt-auto text-truncate side-menu-last-message">
+                                            @(groupChatModel.Messages.LastOrDefault()?.Content ?? "Нет сообщений")
+                                        </span>
+                                        <span class="date-utc-span side-menu-last-message-sent-at">
+                                            @(groupChatModel.Messages.LastOrDefault()?.SentAt.ToString() ?? "")
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                         else
                         {
                             <a asp-controller="WebChat" asp-action="Index" asp-route-chatId="@chatModel.Id">
@@ -148,11 +173,10 @@ else
                     <i class="fs-5 fa-solid fa-plus"></i>
                 </div>
                 <div class="dropdown-menu" aria-labelledby="triggerId">
-                    <button class="dropdown-item p-3" id="create-private-chat-button" data-bs-toggle="modal"
-                            data-bs-target="#newPrivateChatModal">
+                    <button class="dropdown-item p-3" data-bs-toggle="modal" data-bs-target="#newPrivateChatModal">
                         <i class="fa-solid fa-user me-2" style="width: 20px"></i> Создать приватный чат
                     </button>
-                    <button class="dropdown-item p-3" id="create-group-chat-button">
+                    <button class="dropdown-item p-3" data-bs-toggle="modal" data-bs-target="#newGroupChatModal">
                         <i class="fa-solid fa-user-group me-2" style="width: 20px"></i> Создать групповой чат
                     </button>
                 </div>
@@ -160,9 +184,13 @@ else
         </div>
 
         <div class="current-chat-container">
-            @if (Model.CurrentChat is not null)
+            @if (Model.CurrentChat is PrivateChatModel currentPrivateChat)
             {
-                <partial name="PrivateChat" for="CurrentChat"/>
+                <partial name="PrivateChat" for="@currentPrivateChat"/>
+            }
+            else if (Model.CurrentChat is GroupChatModel currentGroupChat)
+            {
+                <partial name="GroupChat" for="@currentGroupChat"/>
             }
             else
             {
@@ -171,8 +199,9 @@ else
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Private chat Modal -->
     <div class="modal fade" id="newPrivateChatModal" tabindex="-1" aria-labelledby="newPrivateChatModalLabel"
+         data-bs-backdrop="static"
          aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -195,13 +224,84 @@ else
             </div>
         </div>
     </div>
+
+    <!-- Group chat Modal -->
+    <form id="newGroupChatForm" method="post" enctype="multipart/form-data" asp-action="GroupChat"
+          asp-controller="WebChat">
+        <div class="modal fade" id="newGroupChatModal" tabindex="-1" aria-labelledby="newGroupChatModalLabel"
+             data-bs-backdrop="static"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="newGroupChatModalLabel">Создать групповой чат</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group mb-1">
+                            <label class="input-group-text"
+                                   for="chatPicture">Фотография группы</label>
+                            <input type="file" class="form-control" accept="image/*" name="chatPicture" required>
+                        </div>
+                        <div class="form-floating mb-2">
+                            <input type="text" class="form-control" name="chatName" required>
+                            <label for="chatName">Название группы</label>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary" data-bs-target="#selectGroupMembersModal"
+                                data-bs-toggle="modal">Далее
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="selectGroupMembersModal" tabindex="-1"
+             aria-labelledby="selectGroupMembersModalLabel"
+             data-bs-backdrop="static"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="selectGroupMembersModalLabel">Выберите участников</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul>
+                            @foreach (var friend in Model.Friends)
+                            {
+                                <div class="form-check d-flex flex-row">
+                                    <input class="form-check-input mt-auto mb-auto me-2" type="checkbox"
+                                           value="@friend.UserId" name="groupMemberId">
+                                    <partial name="NewChatUserCard" for="@friend"/>
+                                </div>
+                            }
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                                data-bs-target="#newGroupChatModal"
+                                data-bs-toggle="modal">Назад
+                        </button>
+                        <button type="submit" class="btn btn-primary">Создать</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 }
 
 @section Scripts
 {
-    @if (Model.CurrentChat is not null)
+    @if (Model.CurrentChat is PrivateChatModel currentPrivateChat)
     {
-        <partial name="_PrivateChatScripts" for="CurrentChat"></partial>
+        <partial name="_PrivateChatScripts" for="@currentPrivateChat"></partial>
+    }
+    else if (Model.CurrentChat is GroupChatModel currentGroupChat)
+    {
+        <partial name="_GroupChatScripts" for="@currentGroupChat"></partial>
     }
     <script>
         let hideSideMenuButton = $("#hide-side-menu-button");
@@ -238,5 +338,32 @@ else
             });
         });
 
+    </script>
+
+    <script>
+        newGroupChatForm = document.querySelector("#newGroupChatForm");
+        newGroupChatForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const formData = new FormData(newGroupChatForm);
+            let userIds = [];
+            newGroupChatForm.querySelectorAll('input[name=groupMemberId]:checked').forEach(element => {
+                userIds.push(element.value)
+            })
+
+            formData.append('userIdsJson', JSON.stringify(userIds))
+            try {
+                const response = await fetch(`/web-chat/group-chat`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log("Success:", response);
+                window.location.href = response.url;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
     </script>
 }

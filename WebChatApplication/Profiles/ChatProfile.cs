@@ -12,6 +12,7 @@ public class ChatProfile : Profile
     {
         CreateMap<ChatEntity, ChatModel>().AfterMap<ChatModelMappingAction>().ReverseMap();
         CreateMap<ChatModel, PrivateChatModel>().AfterMap<PrivateChatModelMappingAction>().ReverseMap();
+        CreateMap<ChatModel, GroupChatModel>().AfterMap<GroupChatModelMappingAction>().ReverseMap();
     }
 
     private class ChatModelMappingAction(ICurrentUserService currentUserService)
@@ -33,6 +34,14 @@ public class ChatProfile : Profile
                                       .Users
                                       .FirstOrDefault(e => e.Username != source.CurrentUser.Username)
                                       ?? throw new InvalidOperationException("Private user not found");
+        }
+    }
+    private class GroupChatModelMappingAction(IChatService chatService) : IMappingAction<ChatModel, GroupChatModel>
+    {
+        public void Process(ChatModel source, GroupChatModel destination, ResolutionContext context)
+        {
+            destination.ChatPictureUrl = chatService.GetChatPictureUrl(source.Id).Result;
+            destination.IsCurrentUserChatOwner = source.CurrentUser.UserId == source.Owner.UserId;
         }
     }
 }

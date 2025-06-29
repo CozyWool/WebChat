@@ -1,5 +1,4 @@
-﻿using WebChatApplication.DataAccess.Entities;
-using WebChatApplication.Enums;
+﻿using WebChatApplication.Enums;
 using WebChatApplication.Models.User;
 
 namespace WebChatApplication.Models;
@@ -12,4 +11,5 @@ public class ChatModel
     public UserCardModel CurrentUser { get; set; }
     public List<UserCardModel> Users { get; set; }
     public List<MessageModel> Messages { get; set; }
+    public UserCardModel Owner { get; set; }
 }

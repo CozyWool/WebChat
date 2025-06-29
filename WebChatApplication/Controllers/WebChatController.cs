@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using WebChatApplication.Messages;
 using WebChatApplication.Models;
 using WebChatApplication.Services;
 
@@ -48,12 +50,12 @@ public class WebChatController : Controller
 
         return RedirectToAction("Index", "WebChat", new {chatId = model.Id});
     }
+
     [HttpPost("group-chat")]
-    public async Task<IActionResult> GroupChat(List<Guid> userIds)
+    public async Task<IActionResult> GroupChat(GroupChatInfoRequest request)
     {
         ViewData["Title"] = "Чаты";
-
-        var model = await _chatService.GetGroupChatByUserIds(userIds);
+        var model = await _chatService.CreateGroupChat(request);
         if (model is null)
         {
             return View("_ShowStatusMessageWithButtons",
@@ -77,6 +79,20 @@ public class WebChatController : Controller
                    Content = JsonConvert.SerializeObject(result, jsonSerializerSettings),
                    ContentType = "application/json"
                };
+    }
+
+    [HttpPost("save-chat-info-changes")]
+    public async Task<IActionResult> SaveChatInfoChanges(GroupChatInfoRequest request)
+    {
+        try
+        {
+            var result = await _chatService.UpdateGroupChat(request);
+            return result ? Ok() : BadRequest();
+        }
+        catch
+        {
+            return BadRequest();
+        }
     }
 
     [HttpDelete("delete-message/{id:guid}")]
