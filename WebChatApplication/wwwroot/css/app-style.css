@@ -5,36 +5,40 @@
 
 .bg-grid {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100vw;
     height: 100vh;
     z-index: -101;
     pointer-events: none;
     background: #050a1a;
 }
+
 .bg-grid::before {
     content: "";
     position: absolute;
     inset: 0;
     z-index: -100;
     pointer-events: none;
-    background:
-            repeating-linear-gradient(
-                    0deg,
-                    rgba(0, 255, 255, 0.05) 0px,
-                    rgba(0, 255, 255, 0.05) 1px,
-                    transparent 1px,
-                    transparent 20px
-            ),
-            repeating-linear-gradient(
-                    90deg,
-                    rgba(0, 255, 255, 0.05) 0px,
-                    rgba(0, 255, 255, 0.05) 1px,
-                    transparent 1px,
-                    transparent 20px
-            );
+    background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 255, 255, 0.05) 0px,
+            rgba(0, 255, 255, 0.05) 1px,
+            transparent 1px,
+            transparent 20px
+    ),
+    repeating-linear-gradient(
+            90deg,
+            rgba(0, 255, 255, 0.05) 0px,
+            rgba(0, 255, 255, 0.05) 1px,
+            transparent 1px,
+            transparent 20px
+    );
     animation: grid-move 2s linear infinite;
 }
+
 @keyframes grid-move {
     0% {
         background-position: 0 0, 0 0;
@@ -187,4 +191,8 @@
 .no-text-decoration {
     text-decoration: none;
     color: FieldText;
+}
+
+.cursor-pointer {
+    cursor: pointer;
 }

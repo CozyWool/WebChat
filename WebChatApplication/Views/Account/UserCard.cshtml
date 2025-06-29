@@ -20,92 +20,104 @@
                                      new {username = Model.Username},
                                      Context.Request.Scheme)"
                    class="username-link">@Model.Username</a>
-                <small class="text-body-secondary ">
-                    @switch (Model.RelationType)
+
+                <small class="text-body-secondary">
+                    @if (Model.Username != User.Identity?.Name)
                     {
-                        case UserRelationTypes.NotRelated:
-                            <span class="float-end">Не связаны</span>
-                            break;
-                        case UserRelationTypes.IncomingFriendRequest:
-                            <span class="float-end">Входящая заявка в друзья</span>
-                            break;
-                        case UserRelationTypes.OutgoingFriendRequest:
-                            <span class="float-end">Исходящая заявка в друзья</span>
-                            break;
-                        case UserRelationTypes.BlacklistedByUser:
-                            <span class="float-end">Вы в черном списке</span>
-                            break;
-                        case UserRelationTypes.Blacklisted or UserRelationTypes.BlacklistedBothWays:
-                            <span class="float-end">У вас в черном списке</span>
-                            break;
-                        case UserRelationTypes.Friend:
-                            <span class="float-end">В друзьях</span>
-                            break;
+                        @switch (Model.RelationType)
+                        {
+                            case UserRelationTypes.NotRelated:
+                                <span class="float-end">Не связаны</span>
+                                break;
+                            case UserRelationTypes.IncomingFriendRequest:
+                                <span class="float-end">Входящая заявка в друзья</span>
+                                break;
+                            case UserRelationTypes.OutgoingFriendRequest:
+                                <span class="float-end">Исходящая заявка в друзья</span>
+                                break;
+                            case UserRelationTypes.BlacklistedByUser:
+                                <span class="float-end">Вы в черном списке</span>
+                                break;
+                            case UserRelationTypes.Blacklisted or UserRelationTypes.BlacklistedBothWays:
+                                <span class="float-end">У вас в черном списке</span>
+                                break;
+                            case UserRelationTypes.Friend:
+                                <span class="float-end">В друзьях</span>
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        <span class="float-end">Это вы</span>
                     }
                 </small>
             </div>
             <div class="card_load_extreme_description">
-                <div class="user-card-buttons">
-                    <form method="post" class="d-flex justify-content-between w-100"
-                          style="flex-direction: row;">
-                        <input value="@Model.Username" name="usernameTo" hidden/>
+                @if (Model.Username != User.Identity?.Name)
+                {
+                    <div class="user-card-buttons">
+                        <form method="post" class="d-flex justify-content-between w-100"
+                              style="flex-direction: row;">
+                            <input value="@Model.Username" name="usernameTo" hidden/>
 
-                        @if (Model.RelationType is UserRelationTypes.NotRelated)
-                        {
-                            <button asp-controller="Account" asp-action="SendFriendRequest"
-                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
-                                    class="btn btn-success flex-grow-1 me-2 button-fixed-size">
-                                <i class="fa-solid fa-user-plus"></i>
-                            </button>
-                        }
-                        else if (Model.RelationType is UserRelationTypes.IncomingFriendRequest)
-                        {
-                            <button asp-controller="Account" asp-action="AcceptFriendRequest"
-                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
-                                    class="btn btn-success flex-grow-1 me-2 button-fixed-size">
-                                <i class="fa-solid fa-user-check"></i>
-                            </button>
-                        }
-                        else if (Model.RelationType is UserRelationTypes.OutgoingFriendRequest)
-                        {
-                            <button asp-controller="Account" asp-action="CancelFriendRequest"
-                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
-                                    class="btn btn-danger flex-grow-1 me-2 button-fixed-size">
-                                <i class="fa-solid fa-user-minus"></i>
-                            </button>
-                        }
+                            @if (Model.RelationType is UserRelationTypes.NotRelated)
+                            {
+                                <button asp-controller="Account" asp-action="SendFriendRequest"
+                                        asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
+                                        class="btn btn-success flex-grow-1 me-2 button-fixed-size">
+                                    <i class="fa-solid fa-user-plus"></i>
+                                </button>
+                            }
+                            else if (Model.RelationType is UserRelationTypes.IncomingFriendRequest)
+                            {
+                                <button asp-controller="Account" asp-action="AcceptFriendRequest"
+                                        asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
+                                        class="btn btn-success flex-grow-1 me-2 button-fixed-size">
+                                    <i class="fa-solid fa-user-check"></i>
+                                </button>
+                            }
+                            else if (Model.RelationType is UserRelationTypes.OutgoingFriendRequest)
+                            {
+                                <button asp-controller="Account" asp-action="CancelFriendRequest"
+                                        asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
+                                        class="btn btn-danger flex-grow-1 me-2 button-fixed-size">
+                                    <i class="fa-solid fa-user-minus"></i>
+                                </button>
+                            }
 
-                        @if (Model.RelationType is UserRelationTypes.Friend)
-                        {
-                            <button asp-controller="WebChat" asp-action="PrivateChat" asp-route-userId="@Model.UserId"
-                                    class="btn btn-primary flex-grow-1 me-2 button-fixed-size">
-                                <i class="fa-solid fa-comment"></i>
-                            </button>
-                            <button asp-controller="Account" asp-action="DeleteFriend"
-                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
-                                    class="btn btn-danger flex-grow-1 me-2 button-fixed-size">
-                                <i class="fa-solid fa-user-minus"></i>
-                            </button>
-                        }
+                            @if (Model.RelationType is UserRelationTypes.Friend)
+                            {
+                                <button asp-controller="WebChat" asp-action="PrivateChat"
+                                        asp-route-userId="@Model.UserId"
+                                        class="btn btn-primary flex-grow-1 me-2 button-fixed-size">
+                                    <i class="fa-solid fa-comment"></i>
+                                </button>
+                                <button asp-controller="Account" asp-action="DeleteFriend"
+                                        asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
+                                        class="btn btn-danger flex-grow-1 me-2 button-fixed-size">
+                                    <i class="fa-solid fa-user-minus"></i>
+                                </button>
+                            }
 
-                        @if (Model.RelationType is UserRelationTypes.Blacklisted or UserRelationTypes.BlacklistedBothWays)
-                        {
-                            <button asp-controller="Account" asp-action="RemoveFromBlacklist"
-                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
-                                    class="btn btn-dark flex-grow-1 me-2 button-fixed-size">
-                                <i class="fa-solid fa-minus"></i> <i class="fa-solid fa-ban"></i>
-                            </button>
-                        }
-                        else
-                        {
-                            <button asp-controller="Account" asp-action="AddToBlacklist"
-                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
-                                    class="btn btn-dark flex-grow-1 me-2 button-fixed-size">
-                                <i class="fa-solid fa-plus"></i> <i class="fa-solid fa-ban"></i>
-                            </button>
-                        }
-                    </form>
-                </div>
+                            @if (Model.RelationType is UserRelationTypes.Blacklisted or UserRelationTypes.BlacklistedBothWays)
+                            {
+                                <button asp-controller="Account" asp-action="RemoveFromBlacklist"
+                                        asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
+                                        class="btn btn-dark flex-grow-1 me-2 button-fixed-size">
+                                    <i class="fa-solid fa-minus"></i> <i class="fa-solid fa-ban"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <button asp-controller="Account" asp-action="AddToBlacklist"
+                                        asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString"
+                                        class="btn btn-dark flex-grow-1 me-2 button-fixed-size">
+                                    <i class="fa-solid fa-plus"></i> <i class="fa-solid fa-ban"></i>
+                                </button>
+                            }
+                        </form>
+                    </div>
+                }
                 <span class="card-text">
                     <small class="text-body-secondary">
                         @if (Model.IsOnline)
@@ -123,7 +135,7 @@
                         {
                             <span class="mb-0"><i class="never-online-status"></i> Не был(а) в сети</span>
                         }
-                    
+
                     </small>
                 </span>
             </div>

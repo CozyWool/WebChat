@@ -64,6 +64,21 @@ public class ChatRepository : IChatRepository
         return chat;
     }
 
+    public async Task Update(ChatEntity entity)
+    {
+        var oldEntity = await GetById(entity.Id, 0, 0);
+        if (oldEntity is null)
+        {
+            return;
+        }
+
+        oldEntity.Name = entity.Name;
+        oldEntity.ChatPictureFileName = entity.ChatPictureFileName;
+        
+        _dbContext.Chats.Update(oldEntity);
+        await _dbContext.SaveChangesAsync();
+    }
+
     private IQueryable<ChatEntity> GetChatsQueryable()
     {
         return _dbContext
