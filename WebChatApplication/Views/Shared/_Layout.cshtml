@@ -32,7 +32,7 @@
                         </a>
                         <ul class="nav nav-pills flex-column mt-4">
                             <li class="nav-item py-2 py-sm-0">
-                                <a class="nav-link text-dark text-center" asp-controller="WebChat" asp-action="Index">
+                                <a class="nav-link text-dark text-center float-start" asp-controller="WebChat" asp-action="Index">
                                     <i class="fs-5 fa-solid fa-house" style="width:25px"></i>
                                     <span class="fs-4 d-none d-sm-inline ms-2 toggleable-display">Главная</span>
                                 </a>
@@ -40,7 +40,7 @@
                             @if (User.Identity is {IsAuthenticated: true})
                             {
                                 <li class="nav-item py-2 py-sm-0">
-                                    <a class="nav-link text-dark text-center" asp-area="" asp-controller="Account"
+                                    <a class="nav-link text-dark text-center float-start" asp-area="" asp-controller="Account"
                                        asp-action="ProfileInfo"
                                        asp-route-username="@User.Identity.Name">
                                         <i class="fs-5 fa-solid fa-circle-user" style="width:25px"></i>
@@ -48,7 +48,7 @@
                                     </a>
                                 </li>
                                 <li class="nav-item py-2 py-sm-0">
-                                    <a class="nav-link text-dark text-center" asp-area="" asp-controller="Account"
+                                    <a class="nav-link text-dark text-center float-start" asp-area="" asp-controller="Account"
                                        asp-action="FriendList">
                                         <i class="fs-5 fa-solid fa-users" style="width:25px"></i>
                                         <span class="fs-4 d-none d-sm-inline ms-2 toggleable-display">Друзья</span>
@@ -57,7 +57,7 @@
                                 @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
                                 {
                                     <li class="nav-item py-2 py-sm-0">
-                                        <a class="nav-link text-dark text-center" asp-area="" asp-controller="Account"
+                                        <a class="nav-link text-dark text-center float-start" asp-area="" asp-controller="Account"
                                            asp-action="AdminMenu">
                                             <i class="fs-5 fa-solid fa-user-secret" style="width:25px"></i>
                                             <span class="fs-4 d-none d-sm-inline ms-2 toggleable-display">Меню администратора</span>
@@ -71,7 +71,7 @@
                         @if (User.Identity is {IsAuthenticated: true})
                         {
                             <div class="dropdown open p-3">
-                                <button class="btn border-none text-dark dropdown-toggle text-center" style="max-width: 200px"
+                                <button class="btn border-none text-dark dropdown-toggle text-center w-100"
                                         type="button"
                                         id="triggerId"
                                         data-bs-toggle="dropdown"
