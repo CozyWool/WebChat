@@ -1,7 +1,10 @@
 using AutoMapper;
+using Newtonsoft.Json;
+using WebChatApplication.Configurations;
 using WebChatApplication.DataAccess.Entities;
 using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Enums;
+using WebChatApplication.Messages;
 using WebChatApplication.Models;
 
 namespace WebChatApplication.Services;
@@ -10,16 +13,26 @@ public class ChatService : IChatService
 {
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserRepository _userRepository;
+    private readonly IConfiguration _configuration;
+    private readonly IS3Service _s3Service;
     private readonly IMapper _mapper;
     private readonly IChatRepository _chatRepository;
+    private readonly string _bucketId;
 
-    public ChatService(IMapper mapper, IChatRepository chatRepository, ICurrentUserService currentUserService,
-                       IUserRepository userRepository)
+    public ChatService(IMapper mapper,
+                       IChatRepository chatRepository,
+                       ICurrentUserService currentUserService,
+                       IUserRepository userRepository,
+                       IConfiguration configuration,
+                       IS3Service s3Service)
     {
         _mapper = mapper;
         _chatRepository = chatRepository;
         _currentUserService = currentUserService;
         _userRepository = userRepository;
+        _configuration = configuration;
+        _s3Service = s3Service;
+        _bucketId = _configuration.GetSection("MinioConfiguration").Get<MinioConfiguration>().BucketId;
     }
 
     public async Task<ChatModel?> GetChatById(Guid chatId, int messageCount = 50, int alreadyLoadedMessageCount = 0)
@@ -111,14 +124,18 @@ public class ChatService : IChatService
     {
         throw new NotImplementedException();
     }
-    
-    public async Task<ChatEntity?> CreateGroupChat(List<Guid> userIds)
+
+    public async Task<ChatEntity?> CreateGroupChat(GroupChatInfoRequest request)
     {
+        var userIds = JsonConvert.DeserializeObject<List<Guid>>(request.UserIdsJson);
         var currentUser = await _currentUserService.GetCurrentUser();
-        if (currentUser is null || !userIds.Contains(currentUser.Id))
+        if (currentUser is null)
         {
             return null;
         }
+
+        userIds.Add(currentUser.Id);
+
         var users = await _userRepository.GetByIds(userIds);
         if (users.Count != userIds.Count)
         {
@@ -127,12 +144,23 @@ public class ChatService : IChatService
 
         var chatEntity = new ChatEntity
                          {
-                             Name = "Новый групповой чат",
+                             Name = request.ChatName,
                              ChatType = ChatTypes.Group,
                              CreatedAt = DateTime.UtcNow,
                              Users = users,
+                             Owner = currentUser,
                          };
         var chat = await _chatRepository.Create(chatEntity);
+        if (request.ChatPicture is not null)
+        {
+            var fileName = $"{chat.Id}_chatPfp{Path.GetExtension(request.ChatPicture.FileName)}";
+            var chatPictureFileName = await _s3Service.UploadFile(_bucketId,
+                                                                  fileName,
+                                                                  request.ChatPicture.OpenReadStream());
+            chat.ChatPictureFileName = chatPictureFileName;
+            await _chatRepository.Update(chat);
+        }
+
         return chat;
     }
 
@@ -140,13 +168,13 @@ public class ChatService : IChatService
     {
         var chats = await _chatRepository.GetCurrentUserChats();
         var mappedChats = _mapper.Map<List<ChatModel>>(chats);
+        var currentUser = await _currentUserService.GetCurrentUser();
         for (var i = 0; i < mappedChats.Count; i++)
         {
             switch (mappedChats[i].ChatType)
             {
                 case ChatTypes.Private:
                     var privateChatModel = _mapper.Map<PrivateChatModel>(mappedChats[i]);
-                    var currentUser = await _currentUserService.GetCurrentUser();
                     if (currentUser is not null)
                     {
                         var relationToUser =
@@ -168,18 +196,74 @@ public class ChatService : IChatService
 
                     mappedChats[i] = privateChatModel;
                     break;
+                case ChatTypes.Group:
+                    var groupChatModel = _mapper.Map<GroupChatModel>(mappedChats[i]);
+
+                    if (groupChatModel is null)
+                    {
+                        mappedChats.RemoveAt(i);
+                        i--;
+                        break;
+                    }
+
+                    mappedChats[i] = groupChatModel;
+                    break;
             }
 
             mappedChats[i].Messages = mappedChats[i].Messages.TakeLast(messageCount).ToList();
         }
 
+        var currentChat = mappedChats.FirstOrDefault(x => x.Id == chatId);
 
         var model = new WebChatViewModel
                     {
-                        CurrentChat = chatId is null ? null : mappedChats.FirstOrDefault(x => x.Id == chatId),
+                        CurrentChat = currentChat,
                         Chats = mappedChats,
                         Friends = await _currentUserService.GetFriends(),
                     };
         return model;
+    }
+
+    public async Task<string> GetChatPictureUrl(Guid chatId)
+    {
+        var chat = await _chatRepository.GetById(chatId, 0, 0);
+        if (chat is null)
+        {
+            return "";
+        }
+        
+        var url = await _s3Service.GetUrl(_bucketId, chat.ChatPictureFileName);
+        if (string.IsNullOrEmpty(url))
+        {
+            url = $"https://ui-avatars.com/api/?name={chat.Name}&size=200p";
+        }
+
+        return url;
+    }
+
+    public async Task<bool> UpdateGroupChat(GroupChatInfoRequest request)
+    {
+        var chat = await _chatRepository.GetById(request.ChatId, 0, 0);
+        if (chat is null)
+        {
+            return false;
+        }
+        
+        chat.Name = request.ChatName;
+        if (request.ChatPicture is not null)
+        {
+            var fileName = $"{chat.Id}_chatPfp{Path.GetExtension(request.ChatPicture.FileName)}";
+            var chatPictureFileName = await _s3Service.UploadFile(_bucketId,
+                                                                  fileName,
+                                                                  request.ChatPicture.OpenReadStream());
+            if (!string.IsNullOrEmpty(chatPictureFileName) &&
+                (chat.ChatPictureFileName is null ||
+                 await _s3Service.DeleteFile(_bucketId, chat.ChatPictureFileName)))
+            {
+                chat.ChatPictureFileName = chatPictureFileName;
+            }
+        }
+        await _chatRepository.Update(chat);
+        return true;
     }
 }
