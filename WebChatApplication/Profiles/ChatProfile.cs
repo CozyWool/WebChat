@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using WebChatApplication.DataAccess.Entities;
+using WebChatApplication.Enums;
 using WebChatApplication.Models;
 using WebChatApplication.Models.User;
 using WebChatApplication.Services;
@@ -15,12 +16,10 @@ public class ChatProfile : Profile
         CreateMap<ChatModel, GroupChatModel>().AfterMap<GroupChatModelMappingAction>().ReverseMap();
     }
 
-    private class ChatModelMappingAction(ICurrentUserService currentUserService)
-        : IMappingAction<ChatEntity, ChatModel>
+    private class ChatModelMappingAction : IMappingAction<ChatEntity, ChatModel>
     {
         public void Process(ChatEntity source, ChatModel destination, ResolutionContext context)
         {
-            destination.CurrentUser = context.Mapper.Map<UserCardModel>(currentUserService.GetCurrentUser().Result);
             destination.Messages =
                 context.Mapper.Map<List<MessageModel>>(source.Messages.OrderBy(e => e.SentAt).ToList());
         }
