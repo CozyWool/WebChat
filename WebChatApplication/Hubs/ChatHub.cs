@@ -1,12 +1,9 @@
-﻿using System.Globalization;
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
-using WebChatApplication.DataAccess.Contexts;
 using WebChatApplication.DataAccess.Entities;
 using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Models;
-using WebChatApplication.Models.User;
 using WebChatApplication.Services;
 
 namespace WebChatApplication.Hubs;
@@ -16,19 +13,16 @@ public class ChatHub : Hub
     private readonly IChatService _chatService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
-    private readonly ApplicationDbContext _context;
     private readonly IMessageRepository _messageRepository;
 
     public ChatHub(IChatService chatService,
                    ICurrentUserService currentUserService,
                    IMapper mapper,
-                   ApplicationDbContext context,
                    IMessageRepository messageRepository)
     {
         _chatService = chatService;
         _currentUserService = currentUserService;
         _mapper = mapper;
-        _context = context;
         _messageRepository = messageRepository;
     }
 
@@ -47,9 +41,9 @@ public class ChatHub : Hub
                                              DateTimeZoneHandling.Utc,
                                      };
         var messageModel = JsonConvert.DeserializeObject<MessageModel>(messageJson, jsonSerializerSettings);
-        var chat = await _chatService.GetChatById(chatId, 0, 0);
+        // var chat = await _chatService.GetChatById(chatId, 0, 0);
         var currentUserId = _currentUserService.CurrentUserId;
-        if (currentUserId is null || chat is null)
+        if (currentUserId is null /*|| chat is null*/)
         {
             return;
         }
@@ -80,9 +74,9 @@ public class ChatHub : Hub
                                              DateTimeZoneHandling.Utc,
                                      };
         var messageModel = JsonConvert.DeserializeObject<MessageModel>(messageJson, jsonSerializerSettings);
-        var chat = await _chatService.GetChatById(chatId, 0, 0);
+        // var chat = await _chatService.GetChatById(chatId, 0, 0);
         var currentUserId = _currentUserService.CurrentUserId;
-        if (currentUserId is null || chat is null)
+        if (currentUserId is null /*|| chat is null*/)
         {
             return;
         }
@@ -100,9 +94,9 @@ public class ChatHub : Hub
 
     public async Task DeleteMessage(Guid chatId, Guid messageId)
     {
-        var chat = await _chatService.GetChatById(chatId, 0, 0);
+        // var chat = await _chatService.GetChatById(chatId, 0, 0);
         var currentUserId = _currentUserService.CurrentUserId;
-        if (currentUserId is null || chat is null)
+        if (currentUserId is null /*|| chat is null*/)
         {
             return;
         }

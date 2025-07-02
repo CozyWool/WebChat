@@ -85,6 +85,8 @@ public class ChatRepository : IChatRepository
                .Chats
                .Include(e => e.Owner)
                .Include(e => e.Users)
+               .ThenInclude(e => e.RelatedUsers)
+               .ThenInclude(e => e.ToUser)
                .Include(e => e.Messages)
                .ThenInclude(e => e.User)
                .AsSplitQuery();
