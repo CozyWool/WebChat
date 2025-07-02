@@ -98,7 +98,7 @@
                         }
                         else
                         {
-                            <div class="d-flex flex-row justify-content-between">
+                            <div class="flex-row justify-content-between d-none d-sm-flex toggleable-display-flex">
                                 <a class="btn btn-primary w-100 me-2" asp-area="" asp-controller="Account"
                                    asp-action="Login"
                                    asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
@@ -135,6 +135,10 @@
         document.querySelectorAll('.toggleable-display').forEach(el => {
             el = $(el)
             el.toggleClass("d-sm-inline");
+        })
+        document.querySelectorAll('.toggleable-display-flex').forEach(el => {
+            el = $(el)
+            el.toggleClass("d-sm-flex");
         })
     });
 </script>

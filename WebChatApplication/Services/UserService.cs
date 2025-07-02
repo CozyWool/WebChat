@@ -246,7 +246,7 @@ public class UserService : IUserService
                         LastActivityAt = profileUser.LastActivityAt,
                         IsOnline = IsOnline(profileUser.LastActivityAt),
                         UserStatus = profileUser.Status,
-                        ProfilePictureUrl = await GetProfilePictureUrl(profileUser.Username),
+                        ProfilePictureUrl = await GetProfilePictureUrlByFilename(profileUser.Username, profileUser.ProfilePictureFileName),
                         RelationToUser = relationToUser,
                         UserId = profileUser.Id
                     };

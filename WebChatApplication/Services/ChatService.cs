@@ -6,6 +6,7 @@ using WebChatApplication.DataAccess.Repositories;
 using WebChatApplication.Enums;
 using WebChatApplication.Messages;
 using WebChatApplication.Models;
+using WebChatApplication.Models.User;
 
 namespace WebChatApplication.Services;
 
@@ -45,6 +46,7 @@ public class ChatService : IChatService
         }
 
         var chatModel = _mapper.Map<ChatModel>(chatEntity);
+        chatModel.CurrentUser = _mapper.Map<UserCardModel>(currentUser);
         switch (chatModel.ChatType)
         {
             case ChatTypes.Private:
@@ -96,6 +98,7 @@ public class ChatService : IChatService
         }
 
         var chatModel = _mapper.Map<ChatModel>(chatEntity);
+        chatModel.CurrentUser = _mapper.Map<UserCardModel>(currentUser);
         var privateChatModel = _mapper.Map<PrivateChatModel>(chatModel);
         return privateChatModel;
     }
@@ -171,6 +174,7 @@ public class ChatService : IChatService
         var currentUser = await _currentUserService.GetCurrentUser();
         for (var i = 0; i < mappedChats.Count; i++)
         {
+            mappedChats[i].CurrentUser = _mapper.Map<UserCardModel>(currentUser);
             switch (mappedChats[i].ChatType)
             {
                 case ChatTypes.Private:
@@ -226,12 +230,13 @@ public class ChatService : IChatService
 
     public async Task<string> GetChatPictureUrl(Guid chatId)
     {
+        // TODO: тут лишний запрос в БД
         var chat = await _chatRepository.GetById(chatId, 0, 0);
         if (chat is null)
         {
             return "";
         }
-        
+
         var url = await _s3Service.GetUrl(_bucketId, chat.ChatPictureFileName);
         if (string.IsNullOrEmpty(url))
         {
@@ -248,7 +253,7 @@ public class ChatService : IChatService
         {
             return false;
         }
-        
+
         chat.Name = request.ChatName;
         if (request.ChatPicture is not null)
         {
@@ -263,6 +268,7 @@ public class ChatService : IChatService
                 chat.ChatPictureFileName = chatPictureFileName;
             }
         }
+
         await _chatRepository.Update(chat);
         return true;
     }
