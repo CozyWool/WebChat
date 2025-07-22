@@ -1,7 +1,7 @@
 @model WebChatApplication.Models.GroupChatModel
 
 <div class="message-wrap">
-    <div class="receiver-info" data-bs-toggle="modal" data-bs-target="#chatInfoModal" style="cursor:pointer;">
+    <div class="receiver-info cursor-pointer" data-bs-toggle="modal" data-bs-target="#chatInfoModal">
         <div>
             <img src="@Model.ChatPictureUrl" class="chat-profile-img" alt="">
         </div>
@@ -162,16 +162,35 @@
                                    @(Model.IsCurrentUserChatOwner ? "" : "readonly")>
                             <label for="chatNameInput">Название группы</label>
                         </div>
-                        <span class="mt-auto mb-auto text-truncate" style="color:gray">
-                                    Кол-во участников: @Model.Users.Count
-                                </span>
                     </div>
                 </div>
                 <div>
-                    <h4>Список участников</h4>
+                    <h5 class="ms-2 d-inline">Кол-во участников: @Model.Users.Count</h5>
+                    @if (Model.IsCurrentUserChatOwner)
+                    {
+                        <div
+                            class="float-end cursor-pointer me-2"
+                            id="triggerId"
+                            data-bs-toggle="modal"
+                            data-bs-target="#addNewUserModal">
+                            <i class="fs-5 fa-solid fa-user-plus"></i>
+                        </div>
+                    }
                     @foreach (var user in Model.Users)
                     {
-                        <partial name="../Account/UserCard" for="@user"/>
+                        <div class="d-flex justify-content-between">
+                            <div class="w-100">
+                                <partial name="../Account/UserCard" for="@user"/>
+                            </div>
+                            @if (Model.IsCurrentUserChatOwner && user.Username != Model.CurrentUser.Username)
+                            {
+                                <div
+                                    class="float-end cursor-pointer mt-auto mb-auto delete-user-from-chat-button" 
+                                    data-user-id="@user.UserId">
+                                    <i class="fs-5 fa-solid fa-xmark"></i>
+                                </div>
+                            }
+                        </div>
                     }
                 </div>
             </div>
@@ -185,6 +204,42 @@
         </div>
     </div>
 </div>
+<form id="addNewUserForm" method="post" enctype="multipart/form-data" asp-action="GroupChat"
+      asp-controller="WebChat">
+    <div class="modal fade" id="addNewUserModal" tabindex="-1"
+         aria-labelledby="addNewUserModalLabel"
+         data-bs-backdrop="static"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewUserModalLabel">Добавить участников</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul>
+                        @foreach (var friend in Model.Friends)
+                        {
+                            <div class="form-check d-flex flex-row">
+                                <input class="form-check-input mt-auto mb-auto me-2" type="checkbox"
+                                       value="@friend.UserId" name="groupMemberId">
+                                <partial name="NewChatUserCard" for="@friend"/>
+                            </div>
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-bs-target="#newGroupChatModal"
+                            data-bs-toggle="modal">Назад
+                    </button>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
 
 <partial name="_ContextMenu"></partial>
 
