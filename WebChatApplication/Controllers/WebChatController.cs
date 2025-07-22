@@ -65,6 +65,33 @@ public class WebChatController : Controller
         return RedirectToAction("Index", "WebChat", new {chatId = model.Id});
     }
 
+    [HttpPost("add-users-to-group-chat")]
+    public async Task<IActionResult> AddUsersToGroupChat(Guid chatId, string userIdsJson)
+    {
+        try
+        {
+            var result = await _chatService.AddUsersToGroupChat(chatId, userIdsJson);
+            return result ? Ok() : BadRequest();
+        }
+        catch
+        {
+            return BadRequest();
+        }
+    }
+    [HttpPost("delete-user-from-group-chat")]
+    public async Task<IActionResult> DeleteUserFromGroupChat(Guid chatId, Guid userId)
+    {
+        try
+        {
+            var result = await _chatService.DeleteUserFromGroupChat(chatId, userId);
+            return result ? Ok() : BadRequest();
+        }
+        catch
+        {
+            return BadRequest();
+        }
+    }
+
     [HttpPost("load-more-messages")]
     public async Task<IActionResult> LoadMoreMessages(Guid chatId, int messageCount, int alreadyLoadedMessageCount)
     {

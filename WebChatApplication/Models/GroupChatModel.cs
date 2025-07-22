@@ -6,5 +6,6 @@ namespace WebChatApplication.Models;
 public class GroupChatModel : ChatModel
 {
     public string ChatPictureUrl { get; set; }
+    public List<UserCardModel> Friends { get; set; }
     public bool IsCurrentUserChatOwner { get; set; }
 }

@@ -202,7 +202,6 @@ public class ChatService : IChatService
                     break;
                 case ChatTypes.Group:
                     var groupChatModel = _mapper.Map<GroupChatModel>(mappedChats[i]);
-
                     if (groupChatModel is null)
                     {
                         mappedChats.RemoveAt(i);
@@ -210,6 +209,19 @@ public class ChatService : IChatService
                         break;
                     }
 
+                    var userIds = groupChatModel
+                                  .Users
+                                  .Select(x => x.UserId)
+                                  .ToList();
+                    var currentUserFriends = currentUser
+                                             .RelatedUsers
+                                             .Where(x => x.RelationType == UserRelationTypes.Friend)
+                                             .Select(x => x.ToUser)
+                                             .Where(x => !userIds.Contains(x.Id))
+                                             .ToList();
+
+
+                    groupChatModel.Friends = _mapper.Map<List<UserCardModel>>(currentUserFriends);
                     mappedChats[i] = groupChatModel;
                     break;
             }
@@ -249,7 +261,7 @@ public class ChatService : IChatService
     public async Task<bool> UpdateGroupChat(GroupChatInfoRequest request)
     {
         var chat = await _chatRepository.GetById(request.ChatId, 0, 0);
-        if (chat is null)
+        if (chat is null || chat.ChatType != ChatTypes.Group)
         {
             return false;
         }
@@ -269,6 +281,54 @@ public class ChatService : IChatService
             }
         }
 
+        await _chatRepository.Update(chat);
+        return true;
+    }
+
+    public async Task<bool> AddUsersToGroupChat(Guid chatId, string userIdsJson)
+    {
+        var chat = await _chatRepository.GetById(chatId, 0, 0);
+        if (chat is null || chat.ChatType != ChatTypes.Group)  
+        {
+            return false;
+        }
+
+        var userIds = JsonConvert.DeserializeObject<List<Guid>>(userIdsJson);
+
+        var users = await _userRepository.GetByIds(userIds);
+        if (users.Count != userIds.Count)
+        {
+            return false;
+        }
+
+        foreach (var user in users)
+        {
+            if (!chat.Users.Contains(user))
+            {
+                chat.Users.Add(user);
+            }
+        }
+
+        await _chatRepository.Update(chat);
+        return true;
+    }
+
+    public async Task<bool> DeleteUserFromGroupChat(Guid chatId, Guid userId)
+    {
+        var chat = await _chatRepository.GetById(chatId, 0, 0);
+        if (chat is null || chat.ChatType != ChatTypes.Group)  
+        {
+            return false;
+        }
+
+        var user = await _userRepository.GetById(userId);
+        if (user is null)
+        {
+            return false;
+        }
+
+        chat.Users.Remove(user);
+        
         await _chatRepository.Update(chat);
         return true;
     }
