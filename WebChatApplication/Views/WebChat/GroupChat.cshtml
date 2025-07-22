@@ -35,6 +35,19 @@
         }
         @foreach (var message in Model.Messages)
         {
+            @if (message.IsServiceMessage)
+            {
+                <div class="service-message message justify-content-center">
+                    <span class="text-truncate message-username me-2">Системное сообщение:</span>
+                    <span class="message-content">@message.Content</span>
+                    <span class="date-utc-span sent-at-span"
+                          data-sent-at="@message.SentAt.ToString()">
+                        @message.SentAt.ToString()
+                    </span>
+                </div>
+                continue;
+            }
+
             <div class="message @(message.IsCurrentUserSentMessage ? "sent-message" : "received-message")"
                  id="@message.Id">
                 <div class="profile-img-container">
@@ -185,13 +198,19 @@
                             @if (Model.IsCurrentUserChatOwner && user.Username != Model.CurrentUser.Username)
                             {
                                 <div
-                                    class="float-end cursor-pointer mt-auto mb-auto delete-user-from-chat-button" 
-                                    data-user-id="@user.UserId">
+                                    class="float-end cursor-pointer mt-auto mb-auto delete-user-from-chat-button"
+                                    data-user-id="@user.UserId"
+                                    data-username="@user.Username">
                                     <i class="fs-5 fa-solid fa-xmark"></i>
                                 </div>
                             }
                         </div>
                     }
+
+                    <div class="delete-user-from-chat-button cursor-pointer btn btn-sm btn-danger w-100 "
+                         data-user-id="@Model.CurrentUser.UserId">Выйти из группы <i class="fs-5 fa-solid fa-xmark"></i>
+                    </div>
+
                 </div>
             </div>
             @if (Model.IsCurrentUserChatOwner)
@@ -222,7 +241,7 @@
                         {
                             <div class="form-check d-flex flex-row">
                                 <input class="form-check-input mt-auto mb-auto me-2" type="checkbox"
-                                       value="@friend.UserId" name="groupMemberId">
+                                       value="@friend.UserId" data-username="@friend.Username" name="groupMemberId">
                                 <partial name="NewChatUserCard" for="@friend"/>
                             </div>
                         }
