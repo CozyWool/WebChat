@@ -398,5 +398,20 @@ BEGIN
     VALUES ('20250624051616_ChatPicture', '9.0.2');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250722121452_IsServiceMessageFlag') THEN
+    ALTER TABLE messages ADD is_service_message boolean NOT NULL DEFAULT FALSE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250722121452_IsServiceMessageFlag') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250722121452_IsServiceMessageFlag', '9.0.2');
+    END IF;
+END $EF$;
 COMMIT;
 

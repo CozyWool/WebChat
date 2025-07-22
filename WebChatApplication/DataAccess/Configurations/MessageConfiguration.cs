@@ -26,6 +26,8 @@ public class MessageConfiguration : IEntityTypeConfiguration<MessageEntity>
                .HasColumnName("updated_at");
         builder.Property(e => e.Content)
                .HasColumnName("content");
+        builder.Property(e => e.IsServiceMessage)
+               .HasColumnName("is_service_message");
 
         builder.HasOne(e => e.User)
                .WithMany(e => e.Messages)
