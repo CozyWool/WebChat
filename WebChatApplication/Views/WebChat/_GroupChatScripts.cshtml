@@ -316,50 +316,105 @@
 
     });
 </script>
-
-<script>
-    const chatPictureInput = document.getElementById('chatPictureInput');
-    const chatPicturePreview = document.getElementById('chatPicturePreview');
-    let baseChatPictureUrl;
-    let baseChatName;
-    document.addEventListener('DOMContentLoaded', () => {
-        baseChatPictureUrl = chatPicturePreview.src;
-        baseChatName = chatNameInput.value;
-    });
-    const chatNameInput = document.getElementById('chatNameInput');
-
-    chatPictureInput.addEventListener('change', () => {
-        const file = chatPictureInput.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                chatPicturePreview.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    const chatInfoModal = document.getElementById('chatInfoModal')
-    chatInfoModal.addEventListener('hide.bs.modal', event => {
-        console.log("hide.bs.modal")
-        chatPicturePreview.src = baseChatPictureUrl;
-        chatPictureInput.value = "";
-        chatNameInput.value = baseChatName;
-    })
-    
-    const saveChatInfoChangesButton = $("#saveChatInfoChangesButton");
-    saveChatInfoChangesButton.click(async () => {
-        const formData = new FormData();
-        formData.enctype = 'multipart/form-data';
-        formData.append('chatName', chatNameInput.value);
-        formData.append('chatPicture', chatPictureInput.files[0]);
-        formData.append('chatId', chatId);
-        const response = await fetch('/web-chat/save-chat-info-changes', {
-            method: 'POST',
-            body: formData
+@if (Model.IsCurrentUserChatOwner)
+{
+    <script>
+        const chatPictureInput = document.getElementById('chatPictureInput');
+        const chatPicturePreview = document.getElementById('chatPicturePreview');
+        let baseChatPictureUrl;
+        let baseChatName;
+        document.addEventListener('DOMContentLoaded', () => {
+            baseChatPictureUrl = chatPicturePreview.src;
+            baseChatName = chatNameInput.value;
         });
-        if (response.ok) {
-            location.reload();
-        }
-    })
-</script>
+        const chatNameInput = document.getElementById('chatNameInput');
+
+        chatPictureInput.addEventListener('change', () => {
+            const file = chatPictureInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    chatPicturePreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        const chatInfoModal = document.getElementById('chatInfoModal')
+        chatInfoModal.addEventListener('hide.bs.modal', event => {
+            chatPicturePreview.src = baseChatPictureUrl;
+            chatPictureInput.value = "";
+            chatNameInput.value = baseChatName;
+        })
+
+        const saveChatInfoChangesButton = $("#saveChatInfoChangesButton");
+        saveChatInfoChangesButton.click(async () => {
+            const formData = new FormData();
+            formData.enctype = 'multipart/form-data';
+            formData.append('chatName', chatNameInput.value);
+            formData.append('chatPicture', chatPictureInput.files[0]);
+            formData.append('chatId', chatId);
+            const response = await fetch('/web-chat/save-chat-info-changes', {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                location.reload();
+            }
+        })
+        let addNewUserForm = document.querySelector("#addNewUserForm");
+        addNewUserForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const formData = new FormData(addNewUserForm);
+            let userIds = [];
+            addNewUserForm.querySelectorAll('input[name=groupMemberId]:checked').forEach(element => {
+                userIds.push(element.value)
+            })
+
+            formData.append('userIdsJson', JSON.stringify(userIds))
+            formData.append('chatId', chatId);
+            try {
+                const response = await fetch(`/web-chat/add-users-to-group-chat`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    alert("Произошла ошибка при добавлении пользователей")
+                }
+                location.reload();
+                console.log("Success:", response);
+            } catch (error) {
+                alert("Произошла ошибка при добавлении пользователей")
+                console.error('Error:', error);
+            }
+        });
+        document.querySelectorAll('.new-chat-user-card').forEach(el => {
+            if (addNewUserForm.contains(el)) {
+                console.log(el)
+                el = $(el)
+                el.click(async function () {
+                    let userId = el.attr("data-user-id");
+                    let checkBox = addNewUserForm.querySelector(`input[name=groupMemberId][value="${userId}"]`);
+                    checkBox.checked = !checkBox.checked;
+                });
+            }
+        });
+        document.querySelectorAll('.delete-user-from-chat-button').forEach(el => {
+                el = $(el)
+                el.click(async function () {
+                    let userId = el.attr("data-user-id");
+                    const formData = new FormData();
+                    formData.append('userId', userId);
+                    formData.append('chatId', chatId);
+                    const response = await fetch('/web-chat/delete-user-from-group-chat', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        );
+    </script>
+}

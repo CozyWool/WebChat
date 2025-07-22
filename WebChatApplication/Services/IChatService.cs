@@ -14,4 +14,6 @@ public interface IChatService
     Task<WebChatViewModel> GetChatsByUsername(string? username, Guid? chatId, int messageCount = 50);
     Task<string> GetChatPictureUrl(Guid filename);
     Task<bool> UpdateGroupChat(GroupChatInfoRequest request);
+    Task<bool> AddUsersToGroupChat(Guid chatId, string userIdsJson);
+    Task<bool> DeleteUserFromGroupChat(Guid chatId, Guid userId);
 }
