@@ -9,6 +9,7 @@ public class MessageEntity
     public DateTime SentAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public string Content { get; set; } = null!;
+    public bool IsServiceMessage { get; set; }
     public virtual MessageEntity? ParentMessage { get; set; }
     public virtual UserEntity User { get; set; } = null!;
     public virtual ICollection<AttachmentEntity> Attachments { get; set; } = new List<AttachmentEntity>();

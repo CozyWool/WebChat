@@ -246,3 +246,10 @@
     opacity: 1;
     pointer-events: auto;
 }
+
+.service-message {
+    max-width: 95%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0px;
+}

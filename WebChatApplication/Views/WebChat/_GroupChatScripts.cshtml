@@ -207,6 +207,15 @@
     function renderMessageElement(message) {
         let content = $('<div />').text(message.Content).html();
         let authorProfileInfoUrl = `/account/profile-info?username=${message.Author.Username}`;
+        if (message.IsServiceMessage) {
+            let messageElement = `
+            <div class="service-message message justify-content-center">
+                <span class="text-truncate message-username me-2">Системное сообщение:</span>
+                <span class="message-content">${content}</span>
+                <span class="sent-at-span" data-sent-at="${message.SentAt}">${formatDateTime(toLocalTime(message.SentAt))}</span>
+            </div>`
+            return messageElement;
+        }
         let parentMessageElement = ``;
         if (message.ParentMessage !== null) {
             parentMessageElement = `
@@ -227,7 +236,7 @@
         } else {
             messageClass = `received-message`;
         }
-        const messageElement = `
+        let messageElement = `
     <div class="message ${messageClass}" id="${message.Id}">
         <div class="profile-img-container">
             <a href="${authorProfileInfoUrl}">
@@ -367,8 +376,10 @@
             event.preventDefault();
             const formData = new FormData(addNewUserForm);
             let userIds = [];
+            let usernames = [];
             addNewUserForm.querySelectorAll('input[name=groupMemberId]:checked').forEach(element => {
                 userIds.push(element.value)
+                usernames.push(element.getAttribute("data-username"))
             })
 
             formData.append('userIdsJson', JSON.stringify(userIds))
@@ -381,6 +392,9 @@
                 if (!response.ok) {
                     alert("Произошла ошибка при добавлении пользователей")
                 }
+                for (const username of usernames) {
+                    sendServiceMessage(`Пользователь ${currentUsername} добавил ${username} в группу`)
+                }
                 location.reload();
                 console.log("Success:", response);
             } catch (error) {
@@ -390,7 +404,6 @@
         });
         document.querySelectorAll('.new-chat-user-card').forEach(el => {
             if (addNewUserForm.contains(el)) {
-                console.log(el)
                 el = $(el)
                 el.click(async function () {
                     let userId = el.attr("data-user-id");
@@ -399,22 +412,60 @@
                 });
             }
         });
-        document.querySelectorAll('.delete-user-from-chat-button').forEach(el => {
-                el = $(el)
-                el.click(async function () {
-                    let userId = el.attr("data-user-id");
-                    const formData = new FormData();
-                    formData.append('userId', userId);
-                    formData.append('chatId', chatId);
-                    const response = await fetch('/web-chat/delete-user-from-group-chat', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    if (response.ok) {
-                        location.reload();
-                    }
-                });
-            }
-        );
     </script>
 }
+<script>
+    document.querySelectorAll('.delete-user-from-chat-button').forEach(el => {
+            el = $(el)
+            el.click(async function () {
+                let userId = el.attr("data-user-id");
+                let confirmedDelete = confirm(userId == currentUserId
+                    ? "Вы уверены, что хотите выйти из группы?"
+                    : "Вы уверены, что хотите удалить этого пользователя?")
+                if (!confirmedDelete) return
+                const formData = new FormData();
+                formData.append('userId', userId);
+                formData.append('chatId', chatId);
+                const response = await fetch('/web-chat/delete-user-from-group-chat', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    if (userId == currentUserId) {
+                        sendServiceMessage(`Пользователь ${currentUsername} вышел из группы`)
+                    } else {
+                        let username = el.attr("data-username");
+                        sendServiceMessage(`Пользователь ${currentUsername} удалил ${username} из группы`)
+                    }
+                    location.reload();
+                }
+            });
+        }
+    );
+
+    function sendServiceMessage(content) {
+        const messageId = generateRandomGuid();
+        const message = {
+            Id: messageId,
+            SentAt: new Date(Date.now() + (new Date()).getTimezoneOffset() * 60 * 1000).toLocaleString('ru', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).replace(',', ''),
+            UpdatedAt: null,
+            Content: content,
+            Author: {
+                Id: currentUserId,
+                Username: currentUsername,
+                ProfilePictureUrl: currentUserProfilePictureUrl
+            },
+            ParentMessage: null,
+            IsServiceMessage: true
+        }
+        connection.invoke("SendMessage", chatId, JSON.stringify(message));
+        receiveMessage(message);
+    }
+</script>

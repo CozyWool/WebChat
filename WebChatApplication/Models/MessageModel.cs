@@ -11,4 +11,5 @@ public class MessageModel
     public UserCardModel Author { get; set; }
     public MessageModel? ParentMessage { get; set; }
     public bool IsCurrentUserSentMessage { get; set; }
+    public bool IsServiceMessage { get; set; }
 }
