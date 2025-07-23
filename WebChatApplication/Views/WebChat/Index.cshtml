@@ -238,14 +238,23 @@ else
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="input-group mb-1">
-                            <label class="input-group-text"
-                                   for="chatPicture">Фотография группы</label>
-                            <input type="file" class="form-control" accept="image/*" name="chatPicture" required>
-                        </div>
-                        <div class="form-floating mb-2">
-                            <input type="text" class="form-control" name="chatName" required>
-                            <label for="chatName">Название группы</label>
+                        <div class="d-flex flex-row">
+                            <div class="form-control d-flex flex-column w-auto">
+                                <label for="newGroupChatPicture">Фото группы</label>
+                                <label class="avatar-wrapper">
+                                    <img id="newGroupChatPicturePreview"
+                                         src="~/images/no_photo.png"
+                                         alt="Фото группы"
+                                         class="avatar cursor-pointer">
+                                    <div class="avatar-overlay"><i class="fa-solid fa-pen"></i></div>
+                                    <input type="file" accept="image/*" class="d-none" id="newGroupChatPicture"
+                                           name="chatPicture">
+                                </label>
+                            </div>
+                            <div class="form-floating mt-auto mb-auto w-100">
+                                <input type="text" class="form-control" name="chatName" required>
+                                <label for="chatName">Название группы</label>
+                            </div>
                         </div>
 
                     </div>
@@ -318,6 +327,16 @@ else
     </script>
 
     <script>
+        let newGroupChatPicture = document.querySelector("#newGroupChatPicture");
+        let newGroupChatPicturePreview = document.querySelector("#newGroupChatPicturePreview");
+        newGroupChatPicture.addEventListener("change", function () {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                newGroupChatPicturePreview.src = e.target.result;
+            };
+            reader.readAsDataURL(this.files[0]);
+        });
+
         let newGroupChatForm = document.querySelector("#newGroupChatForm");
         newGroupChatForm.addEventListener("submit", async function (event) {
             event.preventDefault();
