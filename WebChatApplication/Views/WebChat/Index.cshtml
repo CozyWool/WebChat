@@ -209,7 +209,7 @@ else
                     <h1 class="modal-title fs-5" id="newPrivateChatModalLabel">Создать приватный чат</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" id="newPrivateChatDiv">
                     <ul>
                         @foreach (var friend in Model.Friends)
                         {
@@ -219,7 +219,6 @@ else
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-primary">Далее</button>
                 </div>
             </div>
         </div>
@@ -363,6 +362,7 @@ else
         });
     </script>
     <script>
+        newPrivateChatDiv = document.querySelector("#newPrivateChatDiv");
         document.querySelectorAll('.new-chat-user-card').forEach(el => {
             if (newGroupChatForm.contains(el)) {
                 el = $(el)
@@ -370,6 +370,24 @@ else
                     let userId = el.attr("data-user-id");
                     let checkBox = newGroupChatForm.querySelector(`input[name=groupMemberId][value="${userId}"]`);
                     checkBox.checked = !checkBox.checked;
+                });
+            } else if (newPrivateChatDiv.contains(el)) {
+                el = $(el)
+                el.click(async function () {
+                    let userId = el.attr("data-user-id");
+                    try {
+                        const response = await fetch(`/web-chat/private-chat/${userId}`, {
+                            method: 'POST',
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        console.log("Success:", response);
+                        window.location.href = response.url;
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
                 });
             }
         });
