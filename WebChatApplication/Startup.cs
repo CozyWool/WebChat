@@ -39,8 +39,13 @@ public class Startup(IConfiguration configuration)
 
         services.AddScoped<IMessageService, MessageService>();
         services.AddScoped<IMessageRepository, MessageRepository>();
+        
+        services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
-        services.AddSignalR();
+        services.AddSignalR(options =>
+                            {
+                                options.MaximumReceiveMessageSize = 1024 * 1024 * 20;
+                            });
 
         services.AddFluentEmail(configuration);
         services.AddScoped<IEmailService, EmailService>();

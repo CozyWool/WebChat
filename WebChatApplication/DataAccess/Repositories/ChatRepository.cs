@@ -89,6 +89,8 @@ public class ChatRepository : IChatRepository
                .ThenInclude(e => e.ToUser)
                .Include(e => e.Messages)
                .ThenInclude(e => e.User)
+               .Include(e => e.Messages)
+               .ThenInclude(e => e.Attachments)
                .AsSplitQuery();
     }
 }

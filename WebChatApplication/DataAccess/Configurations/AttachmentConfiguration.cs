@@ -19,11 +19,14 @@ public class AttachmentConfiguration : IEntityTypeConfiguration<AttachmentEntity
         builder.Property(e => e.Path)
                .HasColumnName("path")
                .HasMaxLength(500);
+        builder.Property(e => e.FileName)
+               .HasColumnName("file_name")
+               .HasMaxLength(500);
 
         builder.HasOne(e => e.Message)
                .WithMany(e => e.Attachments)
                .HasForeignKey(e => e.MessageId)
-               .OnDelete(DeleteBehavior.ClientSetNull)
+               .OnDelete(DeleteBehavior.Cascade)
                .IsRequired();
     }
 }

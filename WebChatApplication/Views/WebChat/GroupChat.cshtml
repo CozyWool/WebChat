@@ -31,12 +31,12 @@
                     style="@(Model.Messages.Count == 0 ? "display: none;" : "")">
                 Загрузить больше сообщений
             </button>
-            <span class="no-more-messages" 
+            <span class="no-more-messages"
                   style="@(Model.Messages.Count == 0 ? "display: inline;" : "")">
                 Сообщений больше нет
             </span>
         </form>
-        
+
         @foreach (var message in Model.Messages)
         {
             @if (message.IsServiceMessage)
@@ -87,6 +87,19 @@
                     }
                     <div>
                         <span class="message-content">@message.Content</span>
+                        <div class="message-attachments mt-2" id="message-attachments-@message.Id">
+                            @foreach (var attachment in message.Attachments)
+                            {
+                                <div class="message-attachment">
+                                    <img src="@attachment.PathUrl" 
+                                         data-file-name="@attachment.FileName"
+                                         class="img-thumbnail" 
+                                         style="max-width: 300px; max-height: 300px; cursor: pointer;"
+                                         onclick="openImageInModal('@attachment.PathUrl')"
+                                         alt="Вложение">
+                                </div>
+                            }
+                        </div>
                         <span class="date-utc-span sent-at-span"
                               data-sent-at="@message.SentAt.ToString()">
                             @message.SentAt.ToString()
@@ -133,14 +146,19 @@
                    class="fa-solid fa-xmark float-end ms-auto me-3 mt-auto mb-auto"></i>
             </div>
         </div>
-
-        <div id="send-message-input-container">
-            <textarea rows="4" class="message-field" placeholder="Сообщение..." id="send-message-field"></textarea>
-            <button id="send-button" class="send-btn btn btn-dark">Отправить</button>
+        <div id="attach-files-preview" class="w-100 d-flex flex-row mb-2">
         </div>
-        <div id="edit-message-input-container">
-            <textarea rows="4" class="message-field" placeholder="Сообщение..." id="edit-message-field"></textarea>
-            <button id="edit-button" class="send-btn btn btn-dark">Изменить</button>
+        <div class="d-flex flex-row">
+            <input id="attach-new-file-input" type="file" accept="image/*" class="d-none" multiple>
+            <i id="attach-new-file-button" class="fs-5 fa-solid fa-paperclip mt-3 me-2 cursor-pointer"></i>
+            <div id="send-message-input-container" class="w-100">
+                <textarea rows="4" class="message-field" placeholder="Сообщение..." id="send-message-field"></textarea>
+                <button id="send-button" class="send-btn btn btn-dark">Отправить</button>
+            </div>
+            <div id="edit-message-input-container" class="w-100">
+                <textarea rows="4" class="message-field" placeholder="Сообщение..." id="edit-message-field"></textarea>
+                <button id="edit-button" class="send-btn btn btn-dark">Изменить</button>
+            </div>
         </div>
     </div>
 </div>

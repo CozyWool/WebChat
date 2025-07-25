@@ -413,5 +413,50 @@ BEGIN
     VALUES ('20250722121452_IsServiceMessageFlag', '9.0.2');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250725082351_AttachmentCascadeDelete') THEN
+    ALTER TABLE attachments DROP CONSTRAINT "FK_attachments_messages_message_id";
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250725082351_AttachmentCascadeDelete') THEN
+    ALTER TABLE attachments ALTER COLUMN id TYPE uuid;
+    ALTER TABLE attachments ALTER COLUMN id DROP IDENTITY;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250725082351_AttachmentCascadeDelete') THEN
+    ALTER TABLE attachments ADD CONSTRAINT "FK_attachments_messages_message_id" FOREIGN KEY (message_id) REFERENCES messages (id) ON DELETE CASCADE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250725082351_AttachmentCascadeDelete') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250725082351_AttachmentCascadeDelete', '9.0.2');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250725135305_AttachmentFileName') THEN
+    ALTER TABLE attachments ADD file_name character varying(500) NOT NULL DEFAULT '';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250725135305_AttachmentFileName') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250725135305_AttachmentFileName', '9.0.2');
+    END IF;
+END $EF$;
 COMMIT;
 
