@@ -66,6 +66,8 @@
         sendMessageInputContainer.style.display = "block";
         editMessageField.value = null;
         editingMessage = null;
+        $("#attach-files-preview").removeClass("d-none");
+        $("#attach-new-file-button").removeClass("d-none");
     }
 
     function contextMenuEventHandler(e) {
@@ -173,8 +175,55 @@
 
         sendMessageEditTitle.innerHTML = `Редактирование`;
         sendMessageEditSubtitle.innerHTML = editingMessage.content;
+        // let messageAttachments = document.querySelectorAll(`#message-attachments-${editingMessage.id} .message-attachment`);
+        // console.log("messageAttachments",messageAttachments);
+        // let attachmentsValues = [];
+        // messageAttachments.forEach(attachment => {
+        //     if (attachment.querySelector(`img`).src == "") {
+        //         attachmentsValues.push({
+        //             PathUrl: attachment.querySelector(`a`).href,
+        //             FileName: attachment.querySelector(`a`).getAttribute("data-file-name")
+        //         });
+        //         return;
+        //     }
+        //     attachmentsValues.push({
+        //         PathUrl: attachment.querySelector(`img`).src,
+        //         FileName: attachment.querySelector(`img`).getAttribute("data-file-name")
+        //     });
+        // })
+        // if (messageAttachments.length > 0) {
+        //     attachFilesPreview[0].innerHTML = "";
+        //     attachChildrenIndex = 0;
+        //     const files = attachmentsValues;
+        //     for (let i = 0; i < files.length; i++) {
+        //         const file = files[i];
+        //         if (file) {
+        //             let currentChildrenIndex = attachChildrenIndex++
+        //             let previewElemHtml = `
+        //             <label class="avatar-wrapper m-1" id="attach-preview-${currentChildrenIndex}">
+        //                 <img 
+        //                      class="avatar"
+        //                      alt="...">
+        //                 <div class="avatar-overlay">
+        //                     <i class="fs-5 fa-solid fa-xmark"></i>
+        //                 </div>
+        //                 <input type="hidden" accept="image/*" class="d-none" data-file-name="${file.FileName}" name="attachFilePreview">
+        //             <label>`
+        //             attachFilesPreview.append(previewElemHtml);
+        //             let previewDiv = document.querySelector(`#attach-preview-${currentChildrenIndex}`);
+        //             let previewImg = previewDiv.querySelector(`img`);
+        //             let previewInput = previewDiv.querySelector(`input`);
+        //             previewImg.src = file.PathUrl;
+        //             previewInput.value = file.PathUrl;
+        //             previewDiv.addEventListener('click', () => {
+        //                 $(`#attach-preview-${currentChildrenIndex}`).remove();
+        //             });
+        //         }
+        //     }
+        // }
         sendMessageEditContainer.style.display = "block";
-
+        $("#attach-files-preview").addClass("d-none");
+        $("#attach-new-file-button").addClass("d-none");
         sendMessageInputContainer.style.display = "none";
         closeReplyBox();
     }

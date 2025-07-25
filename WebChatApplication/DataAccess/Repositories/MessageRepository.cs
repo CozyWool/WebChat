@@ -7,10 +7,12 @@ namespace WebChatApplication.DataAccess.Repositories;
 public class MessageRepository : IMessageRepository
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly IChatRepository _chatRepository;
 
-    public MessageRepository(ApplicationDbContext dbContext)
+    public MessageRepository(ApplicationDbContext dbContext, IChatRepository chatRepository)
     {
         _dbContext = dbContext;
+        _chatRepository = chatRepository;
     }
 
     public async Task Create(MessageEntity? entity)
@@ -31,6 +33,7 @@ public class MessageRepository : IMessageRepository
         {
             return;
         }
+
         oldEntity.Content = entity.Content;
         oldEntity.UpdatedAt = entity.UpdatedAt;
         _dbContext.Messages.Update(oldEntity);
@@ -65,12 +68,23 @@ public class MessageRepository : IMessageRepository
     public async Task<MessageEntity?> GetById(Guid id)
     {
         return await _dbContext
-              .Messages
-              .FirstOrDefaultAsync(x => x.Id == id);
+                     .Messages
+                     .Include(x => x.Attachments)
+                     .FirstOrDefaultAsync(x => x.Id == id);
     }
 
     public async Task<List<MessageEntity>> GetByChatId(Guid chatId, int count)
     {
-        throw new NotImplementedException();
+        var message = await _chatRepository.GetById(chatId, 0, 0);
+        if (message is null)
+        {
+            return [];
+        }
+
+        return await _dbContext
+                     .Messages
+                     .Include(x => x.Attachments)
+                     .Where(x => x.ChatId == chatId)
+                     .ToListAsync();
     }
 }

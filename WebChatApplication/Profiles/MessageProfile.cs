@@ -31,6 +31,10 @@ public class MessageProfile : Profile
                                                           source.User.ProfilePictureFileName)
                                                          .Result
                                  };
+            if (source.Attachments.Count > 0)
+            {
+                destination.Attachments = context.Mapper.Map<List<AttachmentModel>>(source.Attachments);
+            }
         }
     }
 }
