@@ -95,28 +95,33 @@ else
                             <div
                                 class="@(Model.CurrentChat?.Id == privateChatModel.Id ? "side-menu-chat-info-selected" : "side-menu-chat-info")"
                                 onclick="location.href = '/web-chat/index?chatId=@chatModel.Id'">
-                                <div>
+                                <div style="position: relative">
                                     <img src="@privateChatModel.PrivateUser.ProfilePictureUrl" class="chat-profile-img"
                                          alt="...">
+                                    <div
+                                        style="position: absolute; 
+                                        bottom: 0;
+                                        right: 0;
+                                        margin-right: -5px;
+                                        margin-bottom: -10px">
+                                        @if (privateChatModel.PrivateUser.IsOnline)
+                                        {
+                                            <span class="mb-0"><i class="online-status"></i></span>
+                                        }
+                                        else if (privateChatModel.PrivateUser.LastActivityAt is not null)
+                                        {
+                                            <span class="mb-0"><i class="offline-status"></i></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="mb-0"><i class="never-online-status"></i></span>
+                                        }
+                                    </div>
                                 </div>
                                 <div class="ms-3 d-flex flex-column">
                                     <div class="d-flex flex-row">
                                         <span class="text-truncate fw-bold"
                                               style="width: 15vw">@privateChatModel.PrivateUser.Username</span>
-                                        <div class="float-end">
-                                            @if (privateChatModel.PrivateUser.IsOnline)
-                                            {
-                                                <span class="mb-0"><i class="online-status"></i></span>
-                                            }
-                                            else if (privateChatModel.PrivateUser.LastActivityAt is not null)
-                                            {
-                                                <span class="mb-0"><i class="offline-status"></i></span>
-                                            }
-                                            else
-                                            {
-                                                <span class="mb-0"><i class="never-online-status"></i></span>
-                                            }
-                                        </div>
                                     </div>
                                     <div class="d-flex flex-row">
                                         <span class="mt-auto text-truncate side-menu-last-message">

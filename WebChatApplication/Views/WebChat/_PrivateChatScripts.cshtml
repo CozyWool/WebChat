@@ -8,7 +8,12 @@
     const currentUserId = "@Model.CurrentUser.UserId";
     const currentUsername = "@Model.CurrentUser.Username";
     const currentUserProfilePictureUrl = "@Model.CurrentUser.ProfilePictureUrl";
-
+    const sendMessageBox = $(".send-message-box");
+    document.addEventListener('DOMContentLoaded', () => {
+        sendServiceMessage("Подключение к чату, пожалуйста, подождите...", true)
+        sendMessageBox.hide();
+    });
+    
     const connection = new signalR.HubConnectionBuilder()
         .withUrl("/chatHub")
         .withAutomaticReconnect()
@@ -23,7 +28,8 @@
 
     connection.start().then(function () {
         connection.invoke("JoinChat", chatId)
-        // console.log("Connected!");
+        sendServiceMessage("Вы подключились к чату", true)
+        sendMessageBox.show();
     }).catch(function (err) {
         console.error(err)
         console.error(err.toString())
@@ -37,6 +43,21 @@
             if (content === "") {
                 return;
             }
+            let messageAttachments = document.querySelectorAll(`#message-attachments-${messageId} .message-attachment`);
+            let attachmentsForClient = [];
+            messageAttachments.forEach(attachment => {
+                if (attachment.querySelector(`img`).src == "") {
+                    attachmentsForClient.push({
+                        PathUrl: attachment.querySelector(`a`).href,
+                        FileName: attachment.querySelector(`a`).getAttribute("data-file-name")
+                    });
+                    return;
+                }
+                attachmentsForClient.push({
+                    PathUrl: attachment.querySelector(`img`).src,
+                    FileName: attachment.querySelector(`img`).getAttribute("data-file-name")
+                });
+            })
 
             const message = {
                 Id: messageId,
@@ -70,6 +91,7 @@
             closeEditBox();
             sendMessageField.focus();
             connection.invoke("EditMessage", chatId, JSON.stringify(message));
+            message.Attachments = attachmentsForClient;
             receiveEditedMessage(message);
         } catch (error) {
             console.error(error);
@@ -84,7 +106,19 @@
             if (content === "") {
                 return;
             }
-
+            let attachedFiles = [];
+            let attachmentsForClient = [];
+            document.querySelectorAll('input[name=attachFilePreview]').forEach(element => {
+                attachedFiles.push({
+                    fileName: element.getAttribute("data-file-name"),
+                    base64: element.value.split(',')[1]
+                })
+                attachmentsForClient.push({
+                    MessageId: messageId,
+                    FileName: element.getAttribute("data-file-name"),
+                    PathUrl: element.value
+                })
+            })
             const message = {
                 Id: messageId,
                 SentAt: new Date(Date.now() + (new Date()).getTimezoneOffset() * 60 * 1000).toLocaleString('ru', {
@@ -115,9 +149,12 @@
                 };
             }
             closeReplyBox();
-            connection.invoke("SendMessage", chatId, JSON.stringify(message));
+            connection.invoke("SendMessage", chatId, JSON.stringify(message), attachedFiles)
+            message.Attachments = attachmentsForClient;
+            
             receiveMessage(message);
             sendMessageField.val("").focus();
+            attachFilesPreview[0].innerHTML = "";
         } catch (error) {
             console.error(error);
         }
@@ -196,6 +233,82 @@
     function goToLastMessage() {
         messagesBox.scrollTop(messagesBox[0].scrollHeight);
     }
+    function renderAttachments(attachments) {
+        if (!attachments || attachments.length === 0) return '';
+
+        return `
+        <div class="message-attachments mt-2" id="message-attachments-${attachments[0].MessageId}">
+            ${attachments.map(attachment => {
+            let isImage = false;
+
+            try {
+                const url = new URL(attachment.PathUrl);
+                isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url.pathname) ||
+                    /^data:image\//.test(attachment.PathUrl);
+            } catch (err) {
+                console.warn("Некорректный URL вложения", attachment.PathUrl);
+            }
+
+            if (isImage) {
+                return `
+                        <div class="message-attachment">
+                            <img src="${attachment.PathUrl}" 
+                                 data-file-name="${attachment.FileName}"
+                                 class="img-thumbnail" 
+                                 style="max-width: 300px; max-height: 300px; cursor: pointer;"
+                                 onclick="openImageInModal('${attachment.PathUrl}')"
+                                 alt="Вложение">
+                        </div>`;
+            }
+
+            return `
+                    <div class="message-attachment">
+                        <a href="${attachment.PathUrl}" data-file-name="${attachment.FileName}" class="btn btn-sm btn-outline-secondary" download>
+                            <i class="fas fa-download me-1"></i>Скачать файл
+                        </a>
+                    </div>`;
+        }).join('')}
+        </div>`;
+    }
+
+
+    function openImageInModal(imageUrl) {
+        let modal = document.getElementById('imageViewerModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'imageViewerModal';
+            modal.className = 'modal fade';
+            modal.tabIndex = '-1';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5">Просмотр</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <img src="" class="img-fluid" id="modalImage" style="max-height: 80vh;">
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+
+            const bsModal = new bootstrap.Modal(modal);
+            modal._bsModal = bsModal;
+
+            modal.addEventListener('click', function (e) {
+                if (e.target === this) {
+                    bsModal.hide();
+                }
+            });
+        }
+
+        const modalImg = modal.querySelector('#modalImage');
+        modalImg.src = imageUrl;
+
+        const bsModal = modal._bsModal || new bootstrap.Modal(modal);
+        bsModal.show();
+    }
 
     function generateRandomGuid() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -207,6 +320,15 @@
     function renderMessageElement(message) {
         let content = $('<div />').text(message.Content).html();
         let authorProfileInfoUrl = `/account/profile-info?username=${message.Author.Username}`;
+        if (message.IsServiceMessage) {
+            let messageElement = `
+            <div class="service-message message justify-content-center">
+                <span class="text-truncate message-username me-2">Системное сообщение:</span>
+                <span class="message-content">${content}</span>
+                <span class="sent-at-span" data-sent-at="${message.SentAt}">${formatDateTime(toLocalTime(message.SentAt))}</span>
+            </div>`
+            return messageElement;
+        }
         let parentMessageElement = ``;
         if (message.ParentMessage !== null) {
             parentMessageElement = `
@@ -245,6 +367,7 @@
             ${parentMessageElement}
             <div>
                 <span class="message-content">${content}</span>
+                ${renderAttachments(message.Attachments || [])}
                 <span class="sent-at-span" data-sent-at="${message.SentAt}">${formatDateTime(toLocalTime(message.SentAt))}</span>
                 <span class="updated-span" data-updated-at="${(message.UpdatedAt !== null ? message.UpdatedAt : "")}">
                     ${(message.UpdatedAt !== null ? "изменено" : "")}
@@ -314,6 +437,75 @@
         }
 
 
+    });
+    function sendServiceMessage(content, isOnlyToClient = false) {
+        const messageId = generateRandomGuid();
+        const message = {
+            Id: messageId,
+            SentAt: new Date(Date.now() + (new Date()).getTimezoneOffset() * 60 * 1000).toLocaleString('ru', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).replace(',', ''),
+            UpdatedAt: null,
+            Content: content,
+            Author: {
+                Id: currentUserId,
+                Username: currentUsername,
+                ProfilePictureUrl: currentUserProfilePictureUrl
+            },
+            ParentMessage: null,
+            IsServiceMessage: true
+        }
+        if (!isOnlyToClient) {
+            connection.invoke("SendMessage", chatId, JSON.stringify(message), null);
+        }
+        receiveMessage(message);
+    }
+</script>
+
+<script>
+    let attachFileButton = document.querySelector("#attach-new-file-button");
+    let attachFileInput = document.querySelector("#attach-new-file-input");
+    attachFileButton.addEventListener('click', (() => {
+        attachFileInput.click();
+    }));
+    let attachFilesPreview = $("#attach-files-preview");
+    let attachChildrenIndex = 0;
+    attachFileInput.addEventListener('change', () => {
+        const files = attachFileInput.files;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file) {
+                let currentChildrenIndex = attachChildrenIndex++
+                let previewElemHtml = `
+                    <label class="avatar-wrapper m-1" id="attach-preview-${currentChildrenIndex}">
+                        <img 
+                             class="avatar"
+                             alt="...">
+                        <div class="avatar-overlay">
+                            <i class="fs-5 fa-solid fa-xmark"></i>
+                        </div>
+                        <input type="hidden" accept="image/*" class="d-none" data-file-name="${file.name}" name="attachFilePreview">
+                    <label>`
+                attachFilesPreview.append(previewElemHtml);
+                let previewDiv = document.querySelector(`#attach-preview-${currentChildrenIndex}`);
+                let previewImg = previewDiv.querySelector(`img`);
+                let previewInput = previewDiv.querySelector(`input`);
+                const reader = new FileReader();
+                reader.onload = e => {
+                    previewImg.src = e.target.result;
+                    previewInput.value = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                previewDiv.addEventListener('click', () => {
+                    $(`#attach-preview-${currentChildrenIndex}`).remove();
+                });
+            }
+        }
     });
 </script>
 
