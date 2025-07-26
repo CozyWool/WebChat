@@ -41,21 +41,21 @@
                 @if (Model.RelationToUser is UserRelationTypes.NotRelated)
                 {
                     <button asp-controller="Account" asp-action="SendFriendRequest"
-                            class="btn btn-success w-100 mb-2">
+                            class="btn btn-primary w-100 mb-2">
                         Добавить в друзья
                     </button>
                 }
                 else if (Model.RelationToUser is UserRelationTypes.IncomingFriendRequest)
                 {
                     <button asp-controller="Account" asp-action="AcceptFriendRequest"
-                            class="btn btn-success w-100 mb-2">
+                            class="btn btn-primary w-100 mb-2">
                         Принять заявку в друзья
                     </button>
                 }
                 else if (Model.RelationToUser is UserRelationTypes.OutgoingFriendRequest)
                 {
                     <button asp-controller="Account" asp-action="CancelFriendRequest"
-                            class="btn btn-danger w-100 mb-2">
+                            class="btn btn-primary w-100 mb-2">
                         Отменить заявку в друзья
                     </button>
                 }
@@ -69,7 +69,7 @@
                             class="btn btn-primary w-100 mb-2">
                         Написать
                     </button>
-                    <button asp-controller="Account" asp-action="DeleteFriend" class="btn btn-secondary w-100 mb-2">
+                    <button asp-controller="Account" asp-action="DeleteFriend" class="btn btn-primary w-100 mb-2">
                         Удалить из друзей
                     </button>
                 }
@@ -87,13 +87,13 @@
                     <div class="alert alert-danger" role="alert">
                         Вы добавили в черный список пользователя.
                     </div>
-                    <button asp-controller="Account" asp-action="RemoveFromBlacklist" class="btn btn-dark w-100 mb-2">
+                    <button asp-controller="Account" asp-action="RemoveFromBlacklist" class="btn btn-primary w-100 mb-2">
                         Удалить из черного списка
                     </button>
                 }
                 else
                 {
-                    <button asp-controller="Account" asp-action="AddToBlacklist" class="btn btn-dark w-100 mb-2">
+                    <button asp-controller="Account" asp-action="AddToBlacklist" class="btn btn-primary w-100 mb-2">
                         Добавить в черный список
                     </button>
                 }
@@ -117,13 +117,13 @@
 
                     @if (Model.RoleName == "Администратор")
                     {
-                        <button asp-controller="Account" asp-action="DemoteUser" class="btn btn-secondary w-100 mb-2">
+                        <button asp-controller="Account" asp-action="DemoteUser" class="btn btn-primary w-100 mb-2">
                             Понизить до пользователя
                         </button>
                     }
                     else if (Model.RoleName == "Пользователь")
                     {
-                        <button asp-controller="Account" asp-action="PromoteUser" class="btn btn-secondary w-100 mb-2">
+                        <button asp-controller="Account" asp-action="PromoteUser" class="btn btn-primary w-100 mb-2">
                             Повысить до администратора
                         </button>
                     }
