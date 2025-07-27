@@ -171,8 +171,7 @@ namespace WebChatApplication.Migrations
                 name: "attachments",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
                     message_id = table.Column<Guid>(type: "uuid", nullable: false),
                     path = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false)
                 },

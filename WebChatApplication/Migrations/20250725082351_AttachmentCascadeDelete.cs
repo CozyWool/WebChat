@@ -16,15 +16,6 @@ namespace WebChatApplication.Migrations
                 name: "FK_attachments_messages_message_id",
                 table: "attachments");
 
-            migrationBuilder.AlterColumn<Guid>(
-                name: "id",
-                table: "attachments",
-                type: "uuid",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "integer")
-                .OldAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
-
             migrationBuilder.AddForeignKey(
                 name: "FK_attachments_messages_message_id",
                 table: "attachments",
@@ -40,15 +31,6 @@ namespace WebChatApplication.Migrations
             migrationBuilder.DropForeignKey(
                 name: "FK_attachments_messages_message_id",
                 table: "attachments");
-
-            migrationBuilder.AlterColumn<int>(
-                name: "id",
-                table: "attachments",
-                type: "integer",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "uuid")
-                .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_attachments_messages_message_id",
